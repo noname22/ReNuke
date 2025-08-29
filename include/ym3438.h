@@ -1,32 +1,3 @@
-/*
- * Copyright (C) 2017-2021 Alexey Khokholov (Nuke.YKT)
- *
- * This file is part of Nuked OPN2.
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
- *  Nuked OPN2(Yamaha YM3438) emulator.
- *  Thanks:
- *      Silicon Pr0n:
- *          Yamaha YM3438 decap and die shot(digshadow).
- *      OPLx decapsulated(Matthew Gambrell, Olli Niemitalo):
- *          OPL2 ROMs.
- *
- * version: 1.0.9
- */
-
 #ifndef YM3438_H
 #define YM3438_H
 
@@ -42,11 +13,8 @@ enum {
 #include <stdint.h>
 #include <stddef.h>
 
-
-/* Opaque structure - implementation details are hidden */
 typedef struct ym3438_t ym3438_t;
 
-/* Allocation and deallocation */
 ym3438_t* OPN2_Create(void);
 void OPN2_Destroy(ym3438_t *chip);
 size_t OPN2_GetSize(void);

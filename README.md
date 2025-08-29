@@ -3,8 +3,6 @@ High accuracy Yamaha YM3438(OPN2) emulator.
 
 The YM3438 is a CMOS variant of the YM2612 used in Sega MegaDrive(Genesis) and FM Towns.
 
-Genesis Plus GX fork with this core integrated is available here: https://github.com/nukeykt/Genesis-Plus-GX
-
 # Features:
 - Based on YM3438 die shot reverse engineering and thus provides very high emulation accuracy.
 
@@ -14,15 +12,21 @@ Genesis Plus GX fork with this core integrated is available here: https://github
 - SSG-EG, CSM mode emulation.
 - Compatible with the YM2612.
 
-# API documention
+# API Documentation
 ```
+/* Memory management */
+ym3438_t* OPN2_Create(void) - Allocate and initialize chip instance
+void OPN2_Destroy(ym3438_t *chip) - Free chip instance
+size_t OPN2_GetSize(void) - Get structure size in bytes
+
+/* Core emulation */
 void OPN2_Reset(ym3438_t *chip) - Reset emulated chip
-void OPN2_Clock(ym3438_t *chip, Bit32s *buffer) - Advances emulated chip state by 1 internal clock(6 master clocks). Writes signed 9-bit MOL, MOR pin states to buffer. 
-void OPN2_Write(ym3438_t *chip, Bit32u port, Bit8u data) - Write 8-bit data to port.
-void OPN2_SetTestPin(ym3438_t *chip, Bit32u value) - Set TEST pin value.
-Bit32u OPN2_ReadTestPin(ym3438_t *chip) - Read TEST pin value.
-Bit32u OPN2_ReadIRQPin(ym3438_t *chip) - Read IRQ pin value.
-Bit8u OPN2_Read(ym3438_t *chip, Bit32u port) - Read chip status.
+void OPN2_Clock(ym3438_t *chip, int16_t *buffer) - Advance chip by 1 internal clock (6 master clocks)
+void OPN2_Write(ym3438_t *chip, uint32_t port, uint8_t data) - Write data to chip port
+uint8_t OPN2_Read(ym3438_t *chip, uint32_t port) - Read chip status
+void OPN2_SetTestPin(ym3438_t *chip, uint32_t value) - Set TEST pin
+uint32_t OPN2_ReadTestPin(ym3438_t *chip) - Read TEST pin
+uint32_t OPN2_ReadIRQPin(ym3438_t *chip) - Read IRQ pin
 ```
 
 # Samples
