@@ -16,6 +16,11 @@ The emulator operates at the chip's internal clock level (6 master clocks per in
 
 ## API Reference
 
+Memory management:
+- `OPN2_Create()` - Allocate and initialize a new chip instance
+- `OPN2_Destroy(ym3438_t *chip)` - Free a chip instance
+- `OPN2_GetSize()` - Get the size of the chip structure in bytes
+
 Core functions for chip emulation:
 - `OPN2_Reset(ym3438_t *chip)` - Reset emulated chip
 - `OPN2_Clock(ym3438_t *chip, Bit32s *buffer)` - Advance chip by 1 internal clock, outputs 9-bit signed MOL/MOR values
@@ -33,12 +38,14 @@ The emulation uses custom integer types defined in the header:
 - `Bit32u/Bit32s` - 32-bit unsigned/signed
 - `Bit64u/Bit64s` - 64-bit unsigned/signed
 
-The `ym3438_t` structure contains the complete chip state including:
+The `ym3438_t` structure is now opaque (implementation details hidden). The structure contains the complete chip state including:
 - I/O registers and pins
 - LFO (Low Frequency Oscillator) state
 - Phase generator state for all 24 operators
 - Envelope generator state
 - Channel output accumulators
+
+Users must use `OPN2_Create()` to allocate chip instances and `OPN2_Destroy()` to free them.
 
 ## Emulation Modes
 
