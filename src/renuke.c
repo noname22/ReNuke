@@ -4,6 +4,9 @@
 
 #define SIGN_EXTEND(bit_index, value) (((value) & ((1u << (bit_index)) - 1u)) - ((value) & (1u << (bit_index))))
 
+#define RN_WRITEBUF_SIZE 2048
+#define RN_WRITEBUF_DELAY 15
+
 /* Full structure definition - now private to implementation */
 struct RN_Chip
 {
@@ -150,6 +153,18 @@ struct RN_Chip
 
     /* Chip configuration */
     RN_ChipType chip_type;
+    
+    /* Write buffer for buffered writes */
+    struct {
+        uint64_t time;
+        uint8_t port;
+        uint8_t data;
+        uint8_t reserved[6];
+    } writebuf[RN_WRITEBUF_SIZE];
+    uint64_t writebuf_samplecnt;
+    uint32_t writebuf_cur;
+    uint32_t writebuf_last;
+    uint64_t writebuf_lasttime;
 };
 
 enum
@@ -1548,4 +1563,71 @@ uint8_t RN_Read(RN_Chip *chip, uint32_t port)
         return chip->status;
     }
     return 0;
+}
+
+void RN_WriteBuffered(RN_Chip *chip, uint32_t port, uint8_t data)
+{
+    uint64_t time1, time2;
+    int16_t buffer[2];
+    uint64_t skip;
+    
+    if (chip->writebuf[chip->writebuf_last].port & 0x04)
+    {
+        RN_Write(chip, chip->writebuf[chip->writebuf_last].port & 0x03, 
+                 chip->writebuf[chip->writebuf_last].data);
+        
+        chip->writebuf_cur = (chip->writebuf_last + 1) % RN_WRITEBUF_SIZE;
+        skip = chip->writebuf[chip->writebuf_last].time - chip->writebuf_samplecnt;
+        chip->writebuf_samplecnt = chip->writebuf[chip->writebuf_last].time;
+        
+        while (skip--)
+        {
+            RN_Clock(chip, buffer);
+        }
+    }
+    
+    chip->writebuf[chip->writebuf_last].port = (port & 0x03) | 0x04;
+    chip->writebuf[chip->writebuf_last].data = data;
+    time1 = chip->writebuf_lasttime + RN_WRITEBUF_DELAY;
+    time2 = chip->writebuf_samplecnt;
+    
+    if (time1 < time2)
+    {
+        time1 = time2;
+    }
+    
+    chip->writebuf[chip->writebuf_last].time = time1;
+    chip->writebuf_lasttime = time1;
+    chip->writebuf_last = (chip->writebuf_last + 1) % RN_WRITEBUF_SIZE;
+}
+
+void RN_Generate(RN_Chip *chip, int16_t *stereo_out)
+{
+    int32_t L = 0, R = 0;
+    int16_t b[2];
+
+    for (int i = 0; i < 24; ++i)
+    {
+        RN_Clock(chip, b);
+        L += b[0];
+        R += b[1];
+
+        while (chip->writebuf[chip->writebuf_cur].time <= chip->writebuf_samplecnt)
+        {
+            if (!(chip->writebuf[chip->writebuf_cur].port & 0x04))
+                break;
+
+            uint8_t p = chip->writebuf[chip->writebuf_cur].port & 0x03;
+            RN_Write(chip, p, chip->writebuf[chip->writebuf_cur].data);
+            chip->writebuf_cur = (chip->writebuf_cur + 1) % RN_WRITEBUF_SIZE;
+        }
+
+        chip->writebuf_samplecnt++;
+    }
+
+    if (L > 32767) L = 32767; else if (L < -32768) L = -32768;
+    if (R > 32767) R = 32767; else if (R < -32768) R = -32768;
+
+    stereo_out[0] = (int16_t)L;
+    stereo_out[1] = (int16_t)R;
 }

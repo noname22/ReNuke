@@ -3,20 +3,25 @@ ignorePaths: []
 dictionaryDefinitions: []
 dictionaries: []
 words:
+  - ADSR
+  - dacdata
+  - dacen
+  - exprom
+  - KEYONOFF
+  - kcode
+  - koff
+  - LFOSEN
+  - logsinrom
+  - nkon
+  - NTSC
+  - okon
+  - PAL
+  - pgrst
+  - ratemax
   - RENUKE
   - RNCM
-  - Tera
-  - okon
-  - koff
-  - ratemax
-  - stephi
-  - nkon
-  - pgrst
-  - ADSR
-  - kcode
-  - dacen
-  - dacdata
-  - logsinrom
-  - exprom
+  - samplecnt
   - SSGEG
+  - stephi
+  - Tera
 import: []
