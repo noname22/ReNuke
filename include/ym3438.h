@@ -42,16 +42,6 @@ enum {
 #include <stdint.h>
 #include <stddef.h>
 
-typedef uintptr_t       Bitu;
-typedef intptr_t        Bits;
-typedef uint64_t        Bit64u;
-typedef int64_t         Bit64s;
-typedef uint32_t        Bit32u;
-typedef int32_t         Bit32s;
-typedef uint16_t        Bit16u;
-typedef int16_t         Bit16s;
-typedef uint8_t         Bit8u;
-typedef int8_t          Bit8s;
 
 /* Opaque structure - implementation details are hidden */
 typedef struct ym3438_t ym3438_t;
@@ -62,13 +52,13 @@ void OPN2_Destroy(ym3438_t *chip);
 size_t OPN2_GetSize(void);
 
 void OPN2_Reset(ym3438_t *chip);
-void OPN2_SetChipType(Bit32u type);
-void OPN2_Clock(ym3438_t *chip, Bit16s *buffer);
-void OPN2_Write(ym3438_t *chip, Bit32u port, Bit8u data);
-void OPN2_SetTestPin(ym3438_t *chip, Bit32u value);
-Bit32u OPN2_ReadTestPin(ym3438_t *chip);
-Bit32u OPN2_ReadIRQPin(ym3438_t *chip);
-Bit8u OPN2_Read(ym3438_t *chip, Bit32u port);
+void OPN2_SetChipType(uint32_t type);
+void OPN2_Clock(ym3438_t *chip, int16_t *buffer);
+void OPN2_Write(ym3438_t *chip, uint32_t port, uint8_t data);
+void OPN2_SetTestPin(ym3438_t *chip, uint32_t value);
+uint32_t OPN2_ReadTestPin(ym3438_t *chip);
+uint32_t OPN2_ReadIRQPin(ym3438_t *chip);
+uint8_t OPN2_Read(ym3438_t *chip, uint32_t port);
 
 #ifdef __cplusplus
 }

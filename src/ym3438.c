@@ -36,146 +36,146 @@
 /* Full structure definition - now private to implementation */
 struct ym3438_t
 {
-    Bit32u cycles;
-    Bit32u channel;
-    Bit16s mol, mor;
+    uint32_t cycles;
+    uint32_t channel;
+    int16_t mol, mor;
     /* IO */
-    Bit16u write_data;
-    Bit8u write_a;
-    Bit8u write_d;
-    Bit8u write_a_en;
-    Bit8u write_d_en;
-    Bit8u write_busy;
-    Bit8u write_busy_cnt;
-    Bit8u write_fm_address;
-    Bit8u write_fm_data;
-    Bit16u write_fm_mode_a;
-    Bit16u address;
-    Bit8u data;
-    Bit8u pin_test_in;
-    Bit8u pin_irq;
-    Bit8u busy;
+    uint16_t write_data;
+    uint8_t write_a;
+    uint8_t write_d;
+    uint8_t write_a_en;
+    uint8_t write_d_en;
+    uint8_t write_busy;
+    uint8_t write_busy_cnt;
+    uint8_t write_fm_address;
+    uint8_t write_fm_data;
+    uint16_t write_fm_mode_a;
+    uint16_t address;
+    uint8_t data;
+    uint8_t pin_test_in;
+    uint8_t pin_irq;
+    uint8_t busy;
     /* LFO */
-    Bit8u lfo_en;
-    Bit8u lfo_freq;
-    Bit8u lfo_pm;
-    Bit8u lfo_am;
-    Bit8u lfo_cnt;
-    Bit8u lfo_inc;
-    Bit8u lfo_quotient;
+    uint8_t lfo_en;
+    uint8_t lfo_freq;
+    uint8_t lfo_pm;
+    uint8_t lfo_am;
+    uint8_t lfo_cnt;
+    uint8_t lfo_inc;
+    uint8_t lfo_quotient;
     /* Phase generator */
-    Bit16u pg_fnum;
-    Bit8u pg_block;
-    Bit8u pg_kcode;
-    Bit32u pg_inc[24];
-    Bit32u pg_phase[24];
-    Bit8u pg_reset[24];
-    Bit32u pg_read;
+    uint16_t pg_fnum;
+    uint8_t pg_block;
+    uint8_t pg_kcode;
+    uint32_t pg_inc[24];
+    uint32_t pg_phase[24];
+    uint8_t pg_reset[24];
+    uint32_t pg_read;
     /* Envelope generator */
-    Bit8u eg_cycle;
-    Bit8u eg_cycle_stop;
-    Bit8u eg_shift;
-    Bit8u eg_shift_lock;
-    Bit8u eg_timer_low_lock;
-    Bit16u eg_timer;
-    Bit8u eg_timer_inc;
-    Bit16u eg_quotient;
-    Bit8u eg_custom_timer;
-    Bit8u eg_rate;
-    Bit8u eg_ksv;
-    Bit8u eg_inc;
-    Bit8u eg_ratemax;
-    Bit8u eg_sl[2];
-    Bit8u eg_lfo_am;
-    Bit8u eg_tl[2];
-    Bit8u eg_state[24];
-    Bit16u eg_level[24];
-    Bit16u eg_out[24];
-    Bit8u eg_kon[24];
-    Bit8u eg_kon_csm[24];
-    Bit8u eg_kon_latch[24];
-    Bit8u eg_csm_mode[24];
-    Bit8u eg_ssg_enable[24];
-    Bit8u eg_ssg_pgrst_latch[24];
-    Bit8u eg_ssg_repeat_latch[24];
-    Bit8u eg_ssg_hold_up_latch[24];
-    Bit8u eg_ssg_dir[24];
-    Bit8u eg_ssg_inv[24];
-    Bit32u eg_read[2];
-    Bit8u eg_read_inc;
+    uint8_t eg_cycle;
+    uint8_t eg_cycle_stop;
+    uint8_t eg_shift;
+    uint8_t eg_shift_lock;
+    uint8_t eg_timer_low_lock;
+    uint16_t eg_timer;
+    uint8_t eg_timer_inc;
+    uint16_t eg_quotient;
+    uint8_t eg_custom_timer;
+    uint8_t eg_rate;
+    uint8_t eg_ksv;
+    uint8_t eg_inc;
+    uint8_t eg_ratemax;
+    uint8_t eg_sl[2];
+    uint8_t eg_lfo_am;
+    uint8_t eg_tl[2];
+    uint8_t eg_state[24];
+    uint16_t eg_level[24];
+    uint16_t eg_out[24];
+    uint8_t eg_kon[24];
+    uint8_t eg_kon_csm[24];
+    uint8_t eg_kon_latch[24];
+    uint8_t eg_csm_mode[24];
+    uint8_t eg_ssg_enable[24];
+    uint8_t eg_ssg_pgrst_latch[24];
+    uint8_t eg_ssg_repeat_latch[24];
+    uint8_t eg_ssg_hold_up_latch[24];
+    uint8_t eg_ssg_dir[24];
+    uint8_t eg_ssg_inv[24];
+    uint32_t eg_read[2];
+    uint8_t eg_read_inc;
     /* FM */
-    Bit16s fm_op1[6][2];
-    Bit16s fm_op2[6];
-    Bit16s fm_out[24];
-    Bit16u fm_mod[24];
+    int16_t fm_op1[6][2];
+    int16_t fm_op2[6];
+    int16_t fm_out[24];
+    uint16_t fm_mod[24];
     /* Channel */
-    Bit16s ch_acc[6];
-    Bit16s ch_out[6];
-    Bit16s ch_lock;
-    Bit8u ch_lock_l;
-    Bit8u ch_lock_r;
-    Bit16s ch_read;
+    int16_t ch_acc[6];
+    int16_t ch_out[6];
+    int16_t ch_lock;
+    uint8_t ch_lock_l;
+    uint8_t ch_lock_r;
+    int16_t ch_read;
     /* Timer */
-    Bit16u timer_a_cnt;
-    Bit16u timer_a_reg;
-    Bit8u timer_a_load_lock;
-    Bit8u timer_a_load;
-    Bit8u timer_a_enable;
-    Bit8u timer_a_reset;
-    Bit8u timer_a_load_latch;
-    Bit8u timer_a_overflow_flag;
-    Bit8u timer_a_overflow;
+    uint16_t timer_a_cnt;
+    uint16_t timer_a_reg;
+    uint8_t timer_a_load_lock;
+    uint8_t timer_a_load;
+    uint8_t timer_a_enable;
+    uint8_t timer_a_reset;
+    uint8_t timer_a_load_latch;
+    uint8_t timer_a_overflow_flag;
+    uint8_t timer_a_overflow;
 
-    Bit16u timer_b_cnt;
-    Bit8u timer_b_subcnt;
-    Bit16u timer_b_reg;
-    Bit8u timer_b_load_lock;
-    Bit8u timer_b_load;
-    Bit8u timer_b_enable;
-    Bit8u timer_b_reset;
-    Bit8u timer_b_load_latch;
-    Bit8u timer_b_overflow_flag;
-    Bit8u timer_b_overflow;
+    uint16_t timer_b_cnt;
+    uint8_t timer_b_subcnt;
+    uint16_t timer_b_reg;
+    uint8_t timer_b_load_lock;
+    uint8_t timer_b_load;
+    uint8_t timer_b_enable;
+    uint8_t timer_b_reset;
+    uint8_t timer_b_load_latch;
+    uint8_t timer_b_overflow_flag;
+    uint8_t timer_b_overflow;
 
     /* Register set */
-    Bit8u mode_test_21[8];
-    Bit8u mode_test_2c[8];
-    Bit8u mode_ch3;
-    Bit8u mode_kon_channel;
-    Bit8u mode_kon_operator[4];
-    Bit8u mode_kon[24];
-    Bit8u mode_csm;
-    Bit8u mode_kon_csm;
-    Bit8u dacen;
-    Bit16s dacdata;
+    uint8_t mode_test_21[8];
+    uint8_t mode_test_2c[8];
+    uint8_t mode_ch3;
+    uint8_t mode_kon_channel;
+    uint8_t mode_kon_operator[4];
+    uint8_t mode_kon[24];
+    uint8_t mode_csm;
+    uint8_t mode_kon_csm;
+    uint8_t dacen;
+    int16_t dacdata;
 
-    Bit8u ks[24];
-    Bit8u ar[24];
-    Bit8u sr[24];
-    Bit8u dt[24];
-    Bit8u multi[24];
-    Bit8u sl[24];
-    Bit8u rr[24];
-    Bit8u dr[24];
-    Bit8u am[24];
-    Bit8u tl[24];
-    Bit8u ssg_eg[24];
+    uint8_t ks[24];
+    uint8_t ar[24];
+    uint8_t sr[24];
+    uint8_t dt[24];
+    uint8_t multi[24];
+    uint8_t sl[24];
+    uint8_t rr[24];
+    uint8_t dr[24];
+    uint8_t am[24];
+    uint8_t tl[24];
+    uint8_t ssg_eg[24];
 
-    Bit16u fnum[6];
-    Bit8u block[6];
-    Bit8u kcode[6];
-    Bit16u fnum_3ch[6];
-    Bit8u block_3ch[6];
-    Bit8u kcode_3ch[6];
-    Bit8u reg_a4;
-    Bit8u reg_ac;
-    Bit8u connect[6];
-    Bit8u fb[6];
-    Bit8u pan_l[6], pan_r[6];
-    Bit8u ams[6];
-    Bit8u pms[6];
-    Bit8u status;
-    Bit32u status_time;
+    uint16_t fnum[6];
+    uint8_t block[6];
+    uint8_t kcode[6];
+    uint16_t fnum_3ch[6];
+    uint8_t block_3ch[6];
+    uint8_t kcode_3ch[6];
+    uint8_t reg_a4;
+    uint8_t reg_ac;
+    uint8_t connect[6];
+    uint8_t fb[6];
+    uint8_t pan_l[6], pan_r[6];
+    uint8_t ams[6];
+    uint8_t pms[6];
+    uint8_t status;
+    uint32_t status_time;
 };
 
 enum {
@@ -186,7 +186,7 @@ enum {
 };
 
 /* logsin table */
-static const Bit16u logsinrom[256] = {
+static const uint16_t logsinrom[256] = {
     0x859, 0x6c3, 0x607, 0x58b, 0x52e, 0x4e4, 0x4a6, 0x471,
     0x443, 0x41a, 0x3f5, 0x3d3, 0x3b5, 0x398, 0x37e, 0x365,
     0x34e, 0x339, 0x324, 0x311, 0x2ff, 0x2ed, 0x2dc, 0x2cd,
@@ -222,7 +222,7 @@ static const Bit16u logsinrom[256] = {
 };
 
 /* exp table */
-static const Bit16u exprom[256] = {
+static const uint16_t exprom[256] = {
     0x000, 0x003, 0x006, 0x008, 0x00b, 0x00e, 0x011, 0x014,
     0x016, 0x019, 0x01c, 0x01f, 0x022, 0x025, 0x028, 0x02a,
     0x02d, 0x030, 0x033, 0x036, 0x039, 0x03c, 0x03f, 0x042,
@@ -258,26 +258,26 @@ static const Bit16u exprom[256] = {
 };
 
 /* Note table */
-static const Bit32u fn_note[16] = {
+static const uint32_t fn_note[16] = {
     0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3
 };
 
 /* Envelope generator */
-static const Bit32u eg_stephi[4][4] = {
+static const uint32_t eg_stephi[4][4] = {
     { 0, 0, 0, 0 },
     { 1, 0, 0, 0 },
     { 1, 0, 1, 0 },
     { 1, 1, 1, 0 }
 };
 
-static const Bit8u eg_am_shift[4] = {
+static const uint8_t eg_am_shift[4] = {
     7, 3, 1, 0
 };
 
 /* Phase generator */
-static const Bit32u pg_detune[8] = { 16, 17, 19, 20, 22, 24, 27, 29 };
+static const uint32_t pg_detune[8] = { 16, 17, 19, 20, 22, 24, 27, 29 };
 
-static const Bit32u pg_lfo_sh1[8][8] = {
+static const uint32_t pg_lfo_sh1[8][8] = {
     { 7, 7, 7, 7, 7, 7, 7, 7 },
     { 7, 7, 7, 7, 7, 7, 7, 7 },
     { 7, 7, 7, 7, 7, 7, 1, 1 },
@@ -288,7 +288,7 @@ static const Bit32u pg_lfo_sh1[8][8] = {
     { 7, 7, 1, 1, 0, 0, 0, 0 }
 };
 
-static const Bit32u pg_lfo_sh2[8][8] = {
+static const uint32_t pg_lfo_sh2[8][8] = {
     { 7, 7, 7, 7, 7, 7, 7, 7 },
     { 7, 7, 7, 7, 2, 2, 2, 2 },
     { 7, 7, 7, 2, 2, 2, 7, 7 },
@@ -300,7 +300,7 @@ static const Bit32u pg_lfo_sh2[8][8] = {
 };
 
 /* Address decoder */
-static const Bit32u op_offset[12] = {
+static const uint32_t op_offset[12] = {
     0x000, /* Ch1 OP1/OP2 */
     0x001, /* Ch2 OP1/OP2 */
     0x002, /* Ch3 OP1/OP2 */
@@ -315,7 +315,7 @@ static const Bit32u op_offset[12] = {
     0x106  /* Ch6 OP3/OP4 */
 };
 
-static const Bit32u ch_offset[6] = {
+static const uint32_t ch_offset[6] = {
     0x000, /* Ch1 */
     0x001, /* Ch2 */
     0x002, /* Ch3 */
@@ -325,12 +325,12 @@ static const Bit32u ch_offset[6] = {
 };
 
 /* LFO */
-static const Bit32u lfo_cycles[8] = {
+static const uint32_t lfo_cycles[8] = {
     108, 77, 71, 67, 62, 44, 8, 5
 };
 
 /* FM algorithm */
-static const Bit32u fm_algorithm[4][6][8] = {
+static const uint32_t fm_algorithm[4][6][8] = {
     {
         { 1, 1, 1, 1, 1, 1, 1, 1 }, /* OP1_0         */
         { 1, 1, 1, 1, 1, 1, 1, 1 }, /* OP1_1         */
@@ -365,7 +365,7 @@ static const Bit32u fm_algorithm[4][6][8] = {
     }
 };
 
-static Bit32u chip_type = ym3438_mode_readmode;
+static uint32_t chip_type = ym3438_mode_readmode;
 
 static void OPN2_DoIO(ym3438_t *chip)
 {
@@ -383,10 +383,10 @@ static void OPN2_DoIO(ym3438_t *chip)
 
 static void OPN2_DoRegWrite(ym3438_t *chip)
 {
-    Bit32u i;
-    Bit32u slot = chip->cycles % 12;
-    Bit32u address;
-    Bit32u channel = chip->channel;
+    uint32_t i;
+    uint32_t slot = chip->cycles % 12;
+    uint32_t address;
+    uint32_t channel = chip->channel;
     /* Update registers */
     if (chip->write_fm_data)
     {
@@ -602,21 +602,21 @@ static void OPN2_DoRegWrite(ym3438_t *chip)
 
 static void OPN2_PhaseCalcIncrement(ym3438_t *chip)
 {
-    Bit32u chan = chip->channel;
-    Bit32u slot = chip->cycles;
-    Bit32u fnum = chip->pg_fnum;
-    Bit32u fnum_h = fnum >> 4;
-    Bit32u fm;
-    Bit32u basefreq;
-    Bit8u lfo = chip->lfo_pm;
-    Bit8u lfo_l = lfo & 0x0f;
-    Bit8u pms = chip->pms[chan];
-    Bit8u dt = chip->dt[slot];
-    Bit8u dt_l = dt & 0x03;
-    Bit8u detune = 0;
-    Bit8u block, note;
-    Bit8u sum, sum_h, sum_l;
-    Bit8u kcode = chip->pg_kcode;
+    uint32_t chan = chip->channel;
+    uint32_t slot = chip->cycles;
+    uint32_t fnum = chip->pg_fnum;
+    uint32_t fnum_h = fnum >> 4;
+    uint32_t fm;
+    uint32_t basefreq;
+    uint8_t lfo = chip->lfo_pm;
+    uint8_t lfo_l = lfo & 0x0f;
+    uint8_t pms = chip->pms[chan];
+    uint8_t dt = chip->dt[slot];
+    uint8_t dt_l = dt & 0x03;
+    uint8_t detune = 0;
+    uint8_t block, note;
+    uint8_t sum, sum_h, sum_l;
+    uint8_t kcode = chip->pg_kcode;
 
     fnum <<= 1;
     /* Apply LFO */
@@ -671,7 +671,7 @@ static void OPN2_PhaseCalcIncrement(ym3438_t *chip)
 
 static void OPN2_PhaseGenerate(ym3438_t *chip)
 {
-    Bit32u slot;
+    uint32_t slot;
     /* Mask increment */
     slot = (chip->cycles + 20) % 24;
     if (chip->pg_reset[slot])
@@ -690,8 +690,8 @@ static void OPN2_PhaseGenerate(ym3438_t *chip)
 
 static void OPN2_EnvelopeSSGEG(ym3438_t *chip)
 {
-    Bit32u slot = chip->cycles;
-    Bit8u direction = 0;
+    uint32_t slot = chip->cycles;
+    uint8_t direction = 0;
     chip->eg_ssg_pgrst_latch[slot] = 0;
     chip->eg_ssg_repeat_latch[slot] = 0;
     chip->eg_ssg_hold_up_latch[slot] = 0;
@@ -736,18 +736,18 @@ static void OPN2_EnvelopeSSGEG(ym3438_t *chip)
 
 static void OPN2_EnvelopeADSR(ym3438_t *chip)
 {
-    Bit32u slot = (chip->cycles + 22) % 24;
+    uint32_t slot = (chip->cycles + 22) % 24;
 
-    Bit8u nkon = chip->eg_kon_latch[slot];
-    Bit8u okon = chip->eg_kon[slot];
-    Bit8u kon_event;
-    Bit8u koff_event;
-    Bit8u eg_off;
-    Bit16s level;
-    Bit16s nextlevel = 0;
-    Bit16s ssg_level;
-    Bit8u nextstate = chip->eg_state[slot];
-    Bit16s inc = 0;
+    uint8_t nkon = chip->eg_kon_latch[slot];
+    uint8_t okon = chip->eg_kon[slot];
+    uint8_t kon_event;
+    uint8_t koff_event;
+    uint8_t eg_off;
+    int16_t level;
+    int16_t nextlevel = 0;
+    int16_t ssg_level;
+    uint8_t nextstate = chip->eg_state[slot];
+    int16_t inc = 0;
     chip->eg_read[0] = chip->eg_read_inc;
     chip->eg_read_inc = chip->eg_inc > 0;
 
@@ -758,7 +758,7 @@ static void OPN2_EnvelopeADSR(ym3438_t *chip)
     kon_event = (nkon && !okon) || (okon && chip->eg_ssg_repeat_latch[slot]);
     koff_event = okon && !nkon;
 
-    ssg_level = level = (Bit16s)chip->eg_level[slot];
+    ssg_level = level = (int16_t)chip->eg_level[slot];
 
     if (chip->eg_ssg_inv[slot])
     {
@@ -854,17 +854,17 @@ static void OPN2_EnvelopeADSR(ym3438_t *chip)
     nextlevel += inc;
 
     chip->eg_kon[slot] = chip->eg_kon_latch[slot];
-    chip->eg_level[slot] = (Bit16u)nextlevel & 0x3ff;
+    chip->eg_level[slot] = (uint16_t)nextlevel & 0x3ff;
     chip->eg_state[slot] = nextstate;
 }
 
 static void OPN2_EnvelopePrepare(ym3438_t *chip)
 {
-    Bit8u rate;
-    Bit8u sum;
-    Bit8u inc = 0;
-    Bit32u slot = chip->cycles;
-    Bit8u rate_sel;
+    uint8_t rate;
+    uint8_t sum;
+    uint8_t inc = 0;
+    uint32_t slot = chip->cycles;
+    uint8_t rate_sel;
 
     /* Prepare increment */
     rate = (chip->eg_rate << 1) + chip->eg_ksv;
@@ -948,8 +948,8 @@ static void OPN2_EnvelopePrepare(ym3438_t *chip)
 
 static void OPN2_EnvelopeGenerate(ym3438_t *chip)
 {
-    Bit32u slot = (chip->cycles + 23) % 24;
-    Bit16u level;
+    uint32_t slot = (chip->cycles + 23) % 24;
+    uint16_t level;
 
     level = chip->eg_level[slot];
 
@@ -995,12 +995,12 @@ static void OPN2_UpdateLFO(ym3438_t *chip)
 
 static void OPN2_FMPrepare(ym3438_t *chip)
 {
-    Bit32u slot = (chip->cycles + 6) % 24;
-    Bit32u channel = chip->channel;
-    Bit16s mod, mod1, mod2;
-    Bit32u op = slot / 6;
-    Bit8u connect = chip->connect[channel];
-    Bit32u prevslot = (chip->cycles + 18) % 24;
+    uint32_t slot = (chip->cycles + 6) % 24;
+    uint32_t channel = chip->channel;
+    int16_t mod, mod1, mod2;
+    uint32_t op = slot / 6;
+    uint8_t connect = chip->connect[channel];
+    uint32_t prevslot = (chip->cycles + 18) % 24;
 
     /* Calculate modulation */
     mod1 = mod2 = 0;
@@ -1057,13 +1057,13 @@ static void OPN2_FMPrepare(ym3438_t *chip)
 
 static void OPN2_ChGenerate(ym3438_t *chip)
 {
-    Bit32u slot = (chip->cycles + 18) % 24;
-    Bit32u channel = chip->channel;
-    Bit32u op = slot / 6;
-    Bit32u test_dac = chip->mode_test_2c[5];
-    Bit16s acc = chip->ch_acc[channel];
-    Bit16s add = test_dac;
-    Bit16s sum = 0;
+    uint32_t slot = (chip->cycles + 18) % 24;
+    uint32_t channel = chip->channel;
+    uint32_t op = slot / 6;
+    uint32_t test_dac = chip->mode_test_2c[5];
+    int16_t acc = chip->ch_acc[channel];
+    int16_t add = test_dac;
+    int16_t sum = 0;
     if (op == 0 && !test_dac)
     {
         acc = 0;
@@ -1092,13 +1092,13 @@ static void OPN2_ChGenerate(ym3438_t *chip)
 
 static void OPN2_ChOutput(ym3438_t *chip)
 {
-    Bit32u cycles = chip->cycles;
-    Bit32u slot = chip->cycles;
-    Bit32u channel = chip->channel;
-    Bit32u test_dac = chip->mode_test_2c[5];
-    Bit16s out;
-    Bit16s sign;
-    Bit32u out_en;
+    uint32_t cycles = chip->cycles;
+    uint32_t slot = chip->cycles;
+    uint32_t channel = chip->channel;
+    uint32_t test_dac = chip->mode_test_2c[5];
+    int16_t out;
+    int16_t sign;
+    uint32_t out_en;
     chip->ch_read = chip->ch_lock;
     if (slot < 12)
     {
@@ -1118,7 +1118,7 @@ static void OPN2_ChOutput(ym3438_t *chip)
     /* Ch 6 */
     if (((cycles >> 2) == 1 && chip->dacen) || test_dac)
     {
-        out = (Bit16s)chip->dacdata;
+        out = (int16_t)chip->dacdata;
         out = SIGN_EXTEND(8, out);
     }
     else
@@ -1174,12 +1174,12 @@ static void OPN2_ChOutput(ym3438_t *chip)
 
 static void OPN2_FMGenerate(ym3438_t *chip)
 {
-    Bit32u slot = (chip->cycles + 19) % 24;
+    uint32_t slot = (chip->cycles + 19) % 24;
     /* Calculate phase */
-    Bit16u phase = (chip->fm_mod[slot] + (chip->pg_phase[slot] >> 10)) & 0x3ff;
-    Bit16u quarter;
-    Bit16u level;
-    Bit16s output;
+    uint16_t phase = (chip->fm_mod[slot] + (chip->pg_phase[slot] >> 10)) & 0x3ff;
+    uint16_t quarter;
+    uint16_t level;
+    int16_t output;
     if (phase & 0x100)
     {
         quarter = (phase ^ 0xff) & 0xff;
@@ -1211,8 +1211,8 @@ static void OPN2_FMGenerate(ym3438_t *chip)
 
 static void OPN2_DoTimerA(ym3438_t *chip)
 {
-    Bit16u time;
-    Bit8u load;
+    uint16_t time;
+    uint8_t load;
     load = chip->timer_a_overflow;
     if (chip->cycles == 2)
     {
@@ -1260,8 +1260,8 @@ static void OPN2_DoTimerA(ym3438_t *chip)
 
 static void OPN2_DoTimerB(ym3438_t *chip)
 {
-    Bit16u time;
-    Bit8u load;
+    uint16_t time;
+    uint8_t load;
     load = chip->timer_b_overflow;
     if (chip->cycles == 2)
     {
@@ -1305,8 +1305,8 @@ static void OPN2_DoTimerB(ym3438_t *chip)
 
 static void OPN2_KeyOn(ym3438_t*chip)
 {
-    Bit32u slot = chip->cycles;
-    Bit32u chan = chip->channel;
+    uint32_t slot = chip->cycles;
+    uint32_t chan = chip->channel;
     /* Key On */
     chip->eg_kon_latch[slot] = chip->mode_kon[slot];
     chip->eg_kon_csm[slot] = 0;
@@ -1354,7 +1354,7 @@ size_t OPN2_GetSize(void)
 
 void OPN2_Reset(ym3438_t *chip)
 {
-    Bit32u i;
+    uint32_t i;
     memset(chip, 0, sizeof(ym3438_t));
     for (i = 0; i < 24; i++)
     {
@@ -1370,14 +1370,14 @@ void OPN2_Reset(ym3438_t *chip)
     }
 }
 
-void OPN2_SetChipType(Bit32u type)
+void OPN2_SetChipType(uint32_t type)
 {
     chip_type = type;
 }
 
-void OPN2_Clock(ym3438_t *chip, Bit16s *buffer)
+void OPN2_Clock(ym3438_t *chip, int16_t *buffer)
 {
-    Bit32u slot = chip->cycles;
+    uint32_t slot = chip->cycles;
     chip->lfo_inc = chip->mode_test_21[1];
     chip->pg_read >>= 1;
     chip->eg_read[1] >>= 1;
@@ -1512,7 +1512,7 @@ void OPN2_Clock(ym3438_t *chip, Bit16s *buffer)
         chip->status_time--;
 }
 
-void OPN2_Write(ym3438_t *chip, Bit32u port, Bit8u data)
+void OPN2_Write(ym3438_t *chip, uint32_t port, uint8_t data)
 {
     port &= 3;
     chip->write_data = ((port << 7) & 0x100) | data;
@@ -1528,12 +1528,12 @@ void OPN2_Write(ym3438_t *chip, Bit32u port, Bit8u data)
     }
 }
 
-void OPN2_SetTestPin(ym3438_t *chip, Bit32u value)
+void OPN2_SetTestPin(ym3438_t *chip, uint32_t value)
 {
     chip->pin_test_in = value & 1;
 }
 
-Bit32u OPN2_ReadTestPin(ym3438_t *chip)
+uint32_t OPN2_ReadTestPin(ym3438_t *chip)
 {
     if (!chip->mode_test_2c[7])
     {
@@ -1542,20 +1542,20 @@ Bit32u OPN2_ReadTestPin(ym3438_t *chip)
     return chip->cycles == 23;
 }
 
-Bit32u OPN2_ReadIRQPin(ym3438_t *chip)
+uint32_t OPN2_ReadIRQPin(ym3438_t *chip)
 {
     return chip->timer_a_overflow_flag | chip->timer_b_overflow_flag;
 }
 
-Bit8u OPN2_Read(ym3438_t *chip, Bit32u port)
+uint8_t OPN2_Read(ym3438_t *chip, uint32_t port)
 {
     if ((port & 3) == 0 || (chip_type & ym3438_mode_readmode))
     {
         if (chip->mode_test_21[6])
         {
             /* Read test data */
-            Bit32u slot = (chip->cycles + 18) % 24;
-            Bit16u testdata = ((chip->pg_read & 0x01) << 15)
+            uint32_t slot = (chip->cycles + 18) % 24;
+            uint16_t testdata = ((chip->pg_read & 0x01) << 15)
                             | ((chip->eg_read[chip->mode_test_21[0]] & 0x01) << 14);
             if (chip->mode_test_2c[4])
             {
