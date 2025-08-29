@@ -5,17 +5,17 @@
 extern "C" {
 #endif
 
-enum {
-    ym3438_mode_ym2612 = 0x01,      /* Enables YM2612 emulation (MD1, MD2 VA2) */
-    ym3438_mode_readmode = 0x02     /* Enables status read on any port (TeraDrive, MD1 VA7, MD2, etc) */
-};
+typedef enum {
+    RNCM_YM2612 = 0x01,      /* Enables YM2612 emulation (MD1, MD2 VA2) */
+    RNCM_READ_MODE = 0x02     /* Enables status read on any port (TeraDrive, MD1 VA7, MD2, etc) */
+} RN_ChipType;
 
 #include <stdint.h>
 #include <stddef.h>
 
 typedef struct RN_Chip RN_Chip;
 
-RN_Chip* RN_Create(uint32_t chip_type);
+RN_Chip* RN_Create(RN_ChipType chip_type);
 void RN_Destroy(RN_Chip *chip);
 size_t RN_GetSize(void);
 

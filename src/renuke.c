@@ -149,7 +149,7 @@ struct RN_Chip
     uint32_t status_time;
 
     /* Chip configuration */
-    uint32_t chip_type;
+    RN_ChipType chip_type;
 };
 
 enum
@@ -1089,7 +1089,7 @@ static void RN_ChOutput(RN_Chip *chip)
     chip->mol = 0;
     chip->mor = 0;
 
-    if (chip->chip_type & ym3438_mode_ym2612)
+    if (chip->chip_type & RNCM_YM2612)
     {
         out_en = ((cycles & 3) == 3) || test_dac;
         /* YM2612 DAC emulation(not verified) */
@@ -1290,7 +1290,7 @@ static void RN_KeyOn(RN_Chip *chip)
     }
 }
 
-RN_Chip *RN_Create(uint32_t chip_type)
+RN_Chip *RN_Create(RN_ChipType chip_type)
 {
     RN_Chip *chip = calloc(1, sizeof(RN_Chip));
 
@@ -1315,7 +1315,7 @@ size_t RN_GetSize(void)
 void RN_Reset(RN_Chip *chip)
 {
     uint32_t i;
-    uint32_t saved_chip_type = chip->chip_type;
+    RN_ChipType saved_chip_type = chip->chip_type;
     memset(chip, 0, sizeof(RN_Chip));
     chip->chip_type = saved_chip_type;
     for (i = 0; i < 24; i++)
@@ -1506,7 +1506,7 @@ uint32_t RN_ReadIRQPin(RN_Chip *chip)
 
 uint8_t RN_Read(RN_Chip *chip, uint32_t port)
 {
-    if ((port & 3) == 0 || (chip->chip_type & ym3438_mode_readmode))
+    if ((port & 3) == 0 || (chip->chip_type & RNCM_READ_MODE))
     {
         if (chip->mode_test_21[6])
         {
@@ -1534,7 +1534,7 @@ uint8_t RN_Read(RN_Chip *chip, uint32_t port)
         {
             chip->status = (chip->busy << 7) | (chip->timer_b_overflow_flag << 1) | chip->timer_a_overflow_flag;
         }
-        if (chip->chip_type & ym3438_mode_ym2612)
+        if (chip->chip_type & RNCM_YM2612)
         {
             chip->status_time = 300000;
         }
