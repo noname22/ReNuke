@@ -7,14 +7,14 @@ extern "C" {
 
 typedef enum {
     RNCM_YM2612 = 0x01,      /* Enables YM2612 emulation (MD1, MD2 VA2) */
-    RNCM_READ_MODE = 0x02     /* Enables status read on any port (TeraDrive, MD1 VA7, MD2, etc) */
+    RNCM_READ_MODE = 0x02    /* Enables status read on any port (TeraDrive, MD1 VA7, MD2, etc) */
 } RN_ChipType;
 
 #include <stdint.h>
 #include <stddef.h>
 
-#define RN_FREQ_NTSC 53267
-#define RN_FREQ_PAL  52781
+#define RN_FREQ_NTSC 53267 // 53,267.03869047619Hz
+#define RN_FREQ_PAL  52781 // 52,781.17460317460Hz
 
 #define RN_LFO           0x22
 #define RN_TIMERS_CH36   0x27

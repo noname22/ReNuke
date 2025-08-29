@@ -86,9 +86,11 @@ int main()
     write_register(chip, 0, RN_D2R      + 0xC, 0x00);
     write_register(chip, 0, RN_D1L_RR   + 0xC, 0x0F);
 
-    // Pitch 440Hz
-    write_register(chip, 0, RN_FREQ_BLOCK_MSB, 0x22);
-    write_register(chip, 0, RN_FREQ_LSB, 0x69);
+    // Pitch A4 (440 Hz)
+    int block = 4;
+    int freq_number = 541;  // A4 from YM2612 frequency table
+    write_register(chip, 0, RN_FREQ_BLOCK_MSB, (block << 3) | (freq_number >> 8));
+    write_register(chip, 0, RN_FREQ_LSB, freq_number & 0xFF);
 
     // Key on channel 1 (all 4 ops bits set, though only OP1 is audible)
     write_register(chip, 0, RN_KEYONOFF, 0xF0);
