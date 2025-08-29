@@ -1,4 +1,4 @@
-project('nuked-opn2', 'c',
+project('renuke', 'c',
   version : '1.0.12',
   license : 'LGPL-2.1-or-later',
   default_options : [

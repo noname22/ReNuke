@@ -1,11 +1,11 @@
 #include <string.h>
 #include <stdlib.h>
-#include "ym3438.h"
+#include "renuke.h"
 
 #define SIGN_EXTEND(bit_index, value) (((value) & ((1u << (bit_index)) - 1u)) - ((value) & (1u << (bit_index))))
 
 /* Full structure definition - now private to implementation */
-struct ym3438_t
+struct RN_Chip
 {
     uint32_t cycles;
     uint32_t channel;
@@ -147,12 +147,13 @@ struct ym3438_t
     uint8_t pms[6];
     uint8_t status;
     uint32_t status_time;
-    
+
     /* Chip configuration */
     uint32_t chip_type;
 };
 
-enum {
+enum
+{
     eg_num_attack = 0,
     eg_num_decay = 1,
     eg_num_sustain = 2,
@@ -192,8 +193,7 @@ static const uint16_t logsinrom[256] = {
     0x007, 0x007, 0x006, 0x006, 0x005, 0x005, 0x005, 0x004,
     0x004, 0x004, 0x003, 0x003, 0x003, 0x002, 0x002, 0x002,
     0x002, 0x001, 0x001, 0x001, 0x001, 0x001, 0x001, 0x001,
-    0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000
-};
+    0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000, 0x000};
 
 /* exp table */
 static const uint16_t exprom[256] = {
@@ -228,50 +228,44 @@ static const uint16_t exprom[256] = {
     0x356, 0x35b, 0x360, 0x365, 0x36a, 0x370, 0x375, 0x37a,
     0x37f, 0x384, 0x38a, 0x38f, 0x394, 0x399, 0x39f, 0x3a4,
     0x3a9, 0x3ae, 0x3b4, 0x3b9, 0x3bf, 0x3c4, 0x3c9, 0x3cf,
-    0x3d4, 0x3da, 0x3df, 0x3e4, 0x3ea, 0x3ef, 0x3f5, 0x3fa
-};
+    0x3d4, 0x3da, 0x3df, 0x3e4, 0x3ea, 0x3ef, 0x3f5, 0x3fa};
 
 /* Note table */
 static const uint32_t fn_note[16] = {
-    0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3
-};
+    0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3};
 
 /* Envelope generator */
 static const uint32_t eg_stephi[4][4] = {
-    { 0, 0, 0, 0 },
-    { 1, 0, 0, 0 },
-    { 1, 0, 1, 0 },
-    { 1, 1, 1, 0 }
-};
+    {0, 0, 0, 0},
+    {1, 0, 0, 0},
+    {1, 0, 1, 0},
+    {1, 1, 1, 0}};
 
 static const uint8_t eg_am_shift[4] = {
-    7, 3, 1, 0
-};
+    7, 3, 1, 0};
 
 /* Phase generator */
-static const uint32_t pg_detune[8] = { 16, 17, 19, 20, 22, 24, 27, 29 };
+static const uint32_t pg_detune[8] = {16, 17, 19, 20, 22, 24, 27, 29};
 
 static const uint32_t pg_lfo_sh1[8][8] = {
-    { 7, 7, 7, 7, 7, 7, 7, 7 },
-    { 7, 7, 7, 7, 7, 7, 7, 7 },
-    { 7, 7, 7, 7, 7, 7, 1, 1 },
-    { 7, 7, 7, 7, 1, 1, 1, 1 },
-    { 7, 7, 7, 1, 1, 1, 1, 0 },
-    { 7, 7, 1, 1, 0, 0, 0, 0 },
-    { 7, 7, 1, 1, 0, 0, 0, 0 },
-    { 7, 7, 1, 1, 0, 0, 0, 0 }
-};
+    {7, 7, 7, 7, 7, 7, 7, 7},
+    {7, 7, 7, 7, 7, 7, 7, 7},
+    {7, 7, 7, 7, 7, 7, 1, 1},
+    {7, 7, 7, 7, 1, 1, 1, 1},
+    {7, 7, 7, 1, 1, 1, 1, 0},
+    {7, 7, 1, 1, 0, 0, 0, 0},
+    {7, 7, 1, 1, 0, 0, 0, 0},
+    {7, 7, 1, 1, 0, 0, 0, 0}};
 
 static const uint32_t pg_lfo_sh2[8][8] = {
-    { 7, 7, 7, 7, 7, 7, 7, 7 },
-    { 7, 7, 7, 7, 2, 2, 2, 2 },
-    { 7, 7, 7, 2, 2, 2, 7, 7 },
-    { 7, 7, 2, 2, 7, 7, 2, 2 },
-    { 7, 7, 2, 7, 7, 7, 2, 7 },
-    { 7, 7, 7, 2, 7, 7, 2, 1 },
-    { 7, 7, 7, 2, 7, 7, 2, 1 },
-    { 7, 7, 7, 2, 7, 7, 2, 1 }
-};
+    {7, 7, 7, 7, 7, 7, 7, 7},
+    {7, 7, 7, 7, 2, 2, 2, 2},
+    {7, 7, 7, 2, 2, 2, 7, 7},
+    {7, 7, 2, 2, 7, 7, 2, 2},
+    {7, 7, 2, 7, 7, 7, 2, 7},
+    {7, 7, 7, 2, 7, 7, 2, 1},
+    {7, 7, 7, 2, 7, 7, 2, 1},
+    {7, 7, 7, 2, 7, 7, 2, 1}};
 
 /* Address decoder */
 static const uint32_t op_offset[12] = {
@@ -300,47 +294,44 @@ static const uint32_t ch_offset[6] = {
 
 /* LFO */
 static const uint32_t lfo_cycles[8] = {
-    108, 77, 71, 67, 62, 44, 8, 5
-};
+    108, 77, 71, 67, 62, 44, 8, 5};
 
 /* FM algorithm */
 static const uint32_t fm_algorithm[4][6][8] = {
     {
-        { 1, 1, 1, 1, 1, 1, 1, 1 }, /* OP1_0         */
-        { 1, 1, 1, 1, 1, 1, 1, 1 }, /* OP1_1         */
-        { 0, 0, 0, 0, 0, 0, 0, 0 }, /* OP2           */
-        { 0, 0, 0, 0, 0, 0, 0, 0 }, /* Last operator */
-        { 0, 0, 0, 0, 0, 0, 0, 0 }, /* Last operator */
-        { 0, 0, 0, 0, 0, 0, 0, 1 }  /* Out           */
+        {1, 1, 1, 1, 1, 1, 1, 1}, /* OP1_0         */
+        {1, 1, 1, 1, 1, 1, 1, 1}, /* OP1_1         */
+        {0, 0, 0, 0, 0, 0, 0, 0}, /* OP2           */
+        {0, 0, 0, 0, 0, 0, 0, 0}, /* Last operator */
+        {0, 0, 0, 0, 0, 0, 0, 0}, /* Last operator */
+        {0, 0, 0, 0, 0, 0, 0, 1}  /* Out           */
     },
     {
-        { 0, 1, 0, 0, 0, 1, 0, 0 }, /* OP1_0         */
-        { 0, 0, 0, 0, 0, 0, 0, 0 }, /* OP1_1         */
-        { 1, 1, 1, 0, 0, 0, 0, 0 }, /* OP2           */
-        { 0, 0, 0, 0, 0, 0, 0, 0 }, /* Last operator */
-        { 0, 0, 0, 0, 0, 0, 0, 0 }, /* Last operator */
-        { 0, 0, 0, 0, 0, 1, 1, 1 }  /* Out           */
+        {0, 1, 0, 0, 0, 1, 0, 0}, /* OP1_0         */
+        {0, 0, 0, 0, 0, 0, 0, 0}, /* OP1_1         */
+        {1, 1, 1, 0, 0, 0, 0, 0}, /* OP2           */
+        {0, 0, 0, 0, 0, 0, 0, 0}, /* Last operator */
+        {0, 0, 0, 0, 0, 0, 0, 0}, /* Last operator */
+        {0, 0, 0, 0, 0, 1, 1, 1}  /* Out           */
     },
     {
-        { 0, 0, 0, 0, 0, 0, 0, 0 }, /* OP1_0         */
-        { 0, 0, 0, 0, 0, 0, 0, 0 }, /* OP1_1         */
-        { 0, 0, 0, 0, 0, 0, 0, 0 }, /* OP2           */
-        { 1, 0, 0, 1, 1, 1, 1, 0 }, /* Last operator */
-        { 0, 0, 0, 0, 0, 0, 0, 0 }, /* Last operator */
-        { 0, 0, 0, 0, 1, 1, 1, 1 }  /* Out           */
+        {0, 0, 0, 0, 0, 0, 0, 0}, /* OP1_0         */
+        {0, 0, 0, 0, 0, 0, 0, 0}, /* OP1_1         */
+        {0, 0, 0, 0, 0, 0, 0, 0}, /* OP2           */
+        {1, 0, 0, 1, 1, 1, 1, 0}, /* Last operator */
+        {0, 0, 0, 0, 0, 0, 0, 0}, /* Last operator */
+        {0, 0, 0, 0, 1, 1, 1, 1}  /* Out           */
     },
     {
-        { 0, 0, 1, 0, 0, 1, 0, 0 }, /* OP1_0         */
-        { 0, 0, 0, 0, 0, 0, 0, 0 }, /* OP1_1         */
-        { 0, 0, 0, 1, 0, 0, 0, 0 }, /* OP2           */
-        { 1, 1, 0, 1, 1, 0, 0, 0 }, /* Last operator */
-        { 0, 0, 1, 0, 0, 0, 0, 0 }, /* Last operator */
-        { 1, 1, 1, 1, 1, 1, 1, 1 }  /* Out           */
-    }
-};
+        {0, 0, 1, 0, 0, 1, 0, 0}, /* OP1_0         */
+        {0, 0, 0, 0, 0, 0, 0, 0}, /* OP1_1         */
+        {0, 0, 0, 1, 0, 0, 0, 0}, /* OP2           */
+        {1, 1, 0, 1, 1, 0, 0, 0}, /* Last operator */
+        {0, 0, 1, 0, 0, 0, 0, 0}, /* Last operator */
+        {1, 1, 1, 1, 1, 1, 1, 1}  /* Out           */
+    }};
 
-
-static void OPN2_DoIO(ym3438_t *chip)
+static void RN_DoIO(RN_Chip *chip)
 {
     /* Write signal check */
     chip->write_a_en = (chip->write_a & 0x03) == 0x01;
@@ -354,7 +345,7 @@ static void OPN2_DoIO(ym3438_t *chip)
     chip->write_busy_cnt &= 0x1f;
 }
 
-static void OPN2_DoRegWrite(ym3438_t *chip)
+static void RN_DoRegWrite(RN_Chip *chip)
 {
     uint32_t i;
     uint32_t slot = chip->cycles % 12;
@@ -573,7 +564,7 @@ static void OPN2_DoRegWrite(ym3438_t *chip)
     }
 }
 
-static void OPN2_PhaseCalcIncrement(ym3438_t *chip)
+static void RN_PhaseCalcIncrement(RN_Chip *chip)
 {
     uint32_t chan = chip->channel;
     uint32_t slot = chip->cycles;
@@ -642,7 +633,7 @@ static void OPN2_PhaseCalcIncrement(ym3438_t *chip)
     chip->pg_inc[slot] &= 0xfffff;
 }
 
-static void OPN2_PhaseGenerate(ym3438_t *chip)
+static void RN_PhaseGenerate(RN_Chip *chip)
 {
     uint32_t slot;
     /* Mask increment */
@@ -661,7 +652,7 @@ static void OPN2_PhaseGenerate(ym3438_t *chip)
     chip->pg_phase[slot] &= 0xfffff;
 }
 
-static void OPN2_EnvelopeSSGEG(ym3438_t *chip)
+static void RN_EnvelopeSSGEG(RN_Chip *chip)
 {
     uint32_t slot = chip->cycles;
     uint8_t direction = 0;
@@ -694,8 +685,7 @@ static void OPN2_EnvelopeSSGEG(ym3438_t *chip)
             }
         }
         /* Hold up */
-        if (chip->eg_kon_latch[slot]
-         && ((chip->ssg_eg[slot] & 0x07) == 0x05 || (chip->ssg_eg[slot] & 0x07) == 0x03))
+        if (chip->eg_kon_latch[slot] && ((chip->ssg_eg[slot] & 0x07) == 0x05 || (chip->ssg_eg[slot] & 0x07) == 0x03))
         {
             chip->eg_ssg_hold_up_latch[slot] = 1;
         }
@@ -703,11 +693,10 @@ static void OPN2_EnvelopeSSGEG(ym3438_t *chip)
     }
     chip->eg_ssg_dir[slot] = direction;
     chip->eg_ssg_enable[slot] = (chip->ssg_eg[slot] >> 3) & 0x01;
-    chip->eg_ssg_inv[slot] = (chip->eg_ssg_dir[slot] ^ (((chip->ssg_eg[slot] >> 2) & 0x01) & ((chip->ssg_eg[slot] >> 3) & 0x01)))
-                           & chip->eg_kon[slot];
+    chip->eg_ssg_inv[slot] = (chip->eg_ssg_dir[slot] ^ (((chip->ssg_eg[slot] >> 2) & 0x01) & ((chip->ssg_eg[slot] >> 3) & 0x01))) & chip->eg_kon[slot];
 }
 
-static void OPN2_EnvelopeADSR(ym3438_t *chip)
+static void RN_EnvelopeADSR(RN_Chip *chip)
 {
     uint32_t slot = (chip->cycles + 22) % 24;
 
@@ -774,7 +763,7 @@ static void OPN2_EnvelopeADSR(ym3438_t *chip)
             {
                 nextstate = eg_num_decay;
             }
-            else if(chip->eg_inc && !chip->eg_ratemax && nkon)
+            else if (chip->eg_inc && !chip->eg_ratemax && nkon)
             {
                 inc = (~level << chip->eg_inc) >> 5;
             }
@@ -831,7 +820,7 @@ static void OPN2_EnvelopeADSR(ym3438_t *chip)
     chip->eg_state[slot] = nextstate;
 }
 
-static void OPN2_EnvelopePrepare(ym3438_t *chip)
+static void RN_EnvelopePrepare(RN_Chip *chip)
 {
     uint8_t rate;
     uint8_t sum;
@@ -881,8 +870,7 @@ static void OPN2_EnvelopePrepare(ym3438_t *chip)
 
     /* Prepare rate & ksv */
     rate_sel = chip->eg_state[slot];
-    if ((chip->eg_kon[slot] && chip->eg_ssg_repeat_latch[slot])
-     || (!chip->eg_kon[slot] && chip->eg_kon_latch[slot]))
+    if ((chip->eg_kon[slot] && chip->eg_ssg_repeat_latch[slot]) || (!chip->eg_kon[slot] && chip->eg_kon_latch[slot]))
     {
         rate_sel = eg_num_attack;
     }
@@ -919,7 +907,7 @@ static void OPN2_EnvelopePrepare(ym3438_t *chip)
     chip->eg_sl[0] = chip->sl[slot];
 }
 
-static void OPN2_EnvelopeGenerate(ym3438_t *chip)
+static void RN_EnvelopeGenerate(RN_Chip *chip)
 {
     uint32_t slot = (chip->cycles + 23) % 24;
     uint16_t level;
@@ -952,7 +940,7 @@ static void OPN2_EnvelopeGenerate(ym3438_t *chip)
     chip->eg_out[slot] = level;
 }
 
-static void OPN2_UpdateLFO(ym3438_t *chip)
+static void RN_UpdateLFO(RN_Chip *chip)
 {
     if ((chip->lfo_quotient & lfo_cycles[chip->lfo_freq]) == lfo_cycles[chip->lfo_freq])
     {
@@ -966,7 +954,7 @@ static void OPN2_UpdateLFO(ym3438_t *chip)
     chip->lfo_cnt &= chip->lfo_en;
 }
 
-static void OPN2_FMPrepare(ym3438_t *chip)
+static void RN_FMPrepare(RN_Chip *chip)
 {
     uint32_t slot = (chip->cycles + 6) % 24;
     uint32_t channel = chip->channel;
@@ -1028,7 +1016,7 @@ static void OPN2_FMPrepare(ym3438_t *chip)
     }
 }
 
-static void OPN2_ChGenerate(ym3438_t *chip)
+static void RN_ChGenerate(RN_Chip *chip)
 {
     uint32_t slot = (chip->cycles + 18) % 24;
     uint32_t channel = chip->channel;
@@ -1051,7 +1039,7 @@ static void OPN2_ChGenerate(ym3438_t *chip)
     {
         sum = 255;
     }
-    else if(sum < -256)
+    else if (sum < -256)
     {
         sum = -256;
     }
@@ -1063,7 +1051,7 @@ static void OPN2_ChGenerate(ym3438_t *chip)
     chip->ch_acc[channel] = sum;
 }
 
-static void OPN2_ChOutput(ym3438_t *chip)
+static void RN_ChOutput(RN_Chip *chip)
 {
     uint32_t cycles = chip->cycles;
     uint32_t slot = chip->cycles;
@@ -1145,7 +1133,7 @@ static void OPN2_ChOutput(ym3438_t *chip)
     }
 }
 
-static void OPN2_FMGenerate(ym3438_t *chip)
+static void RN_FMGenerate(RN_Chip *chip)
 {
     uint32_t slot = (chip->cycles + 19) % 24;
     /* Calculate phase */
@@ -1182,7 +1170,7 @@ static void OPN2_FMGenerate(ym3438_t *chip)
     chip->fm_out[slot] = output;
 }
 
-static void OPN2_DoTimerA(ym3438_t *chip)
+static void RN_DoTimerA(RN_Chip *chip)
 {
     uint16_t time;
     uint8_t load;
@@ -1231,7 +1219,7 @@ static void OPN2_DoTimerA(ym3438_t *chip)
     chip->timer_a_cnt = time & 0x3ff;
 }
 
-static void OPN2_DoTimerB(ym3438_t *chip)
+static void RN_DoTimerB(RN_Chip *chip)
 {
     uint16_t time;
     uint8_t load;
@@ -1276,7 +1264,7 @@ static void OPN2_DoTimerB(ym3438_t *chip)
     chip->timer_b_cnt = time & 0xff;
 }
 
-static void OPN2_KeyOn(ym3438_t*chip)
+static void RN_KeyOn(RN_Chip *chip)
 {
     uint32_t slot = chip->cycles;
     uint32_t chan = chip->channel;
@@ -1302,35 +1290,33 @@ static void OPN2_KeyOn(ym3438_t*chip)
     }
 }
 
-ym3438_t* OPN2_Create(uint32_t chip_type)
+RN_Chip *RN_Create(uint32_t chip_type)
 {
-    ym3438_t *chip = (ym3438_t*)malloc(sizeof(ym3438_t));
+    RN_Chip *chip = calloc(1, sizeof(RN_Chip));
+
     if (chip != NULL)
     {
-        memset(chip, 0, sizeof(ym3438_t));
         chip->chip_type = chip_type;
     }
+
     return chip;
 }
 
-void OPN2_Destroy(ym3438_t *chip)
+void RN_Destroy(RN_Chip *chip)
 {
-    if (chip != NULL)
-    {
-        free(chip);
-    }
+    free(chip);
 }
 
-size_t OPN2_GetSize(void)
+size_t RN_GetSize(void)
 {
-    return sizeof(ym3438_t);
+    return sizeof(RN_Chip);
 }
 
-void OPN2_Reset(ym3438_t *chip)
+void RN_Reset(RN_Chip *chip)
 {
     uint32_t i;
     uint32_t saved_chip_type = chip->chip_type;
-    memset(chip, 0, sizeof(ym3438_t));
+    memset(chip, 0, sizeof(RN_Chip));
     chip->chip_type = saved_chip_type;
     for (i = 0; i < 24; i++)
     {
@@ -1346,8 +1332,7 @@ void OPN2_Reset(ym3438_t *chip)
     }
 }
 
-
-void OPN2_Clock(ym3438_t *chip, int16_t *buffer)
+void RN_Clock(RN_Chip *chip, int16_t *buffer)
 {
     uint32_t slot = chip->cycles;
     chip->lfo_inc = chip->mode_test_21[1];
@@ -1416,25 +1401,25 @@ void OPN2_Clock(ym3438_t *chip, int16_t *buffer)
         chip->eg_cycle_stop = 0;
     }
 
-    OPN2_DoIO(chip);
+    RN_DoIO(chip);
 
-    OPN2_DoTimerA(chip);
-    OPN2_DoTimerB(chip);
-    OPN2_KeyOn(chip);
+    RN_DoTimerA(chip);
+    RN_DoTimerB(chip);
+    RN_KeyOn(chip);
 
-    OPN2_ChOutput(chip);
-    OPN2_ChGenerate(chip);
+    RN_ChOutput(chip);
+    RN_ChGenerate(chip);
 
-    OPN2_FMPrepare(chip);
-    OPN2_FMGenerate(chip);
+    RN_FMPrepare(chip);
+    RN_FMGenerate(chip);
 
-    OPN2_PhaseGenerate(chip);
-    OPN2_PhaseCalcIncrement(chip);
+    RN_PhaseGenerate(chip);
+    RN_PhaseCalcIncrement(chip);
 
-    OPN2_EnvelopeADSR(chip);
-    OPN2_EnvelopeGenerate(chip);
-    OPN2_EnvelopeSSGEG(chip);
-    OPN2_EnvelopePrepare(chip);
+    RN_EnvelopeADSR(chip);
+    RN_EnvelopeGenerate(chip);
+    RN_EnvelopeSSGEG(chip);
+    RN_EnvelopePrepare(chip);
 
     /* Prepare fnum & block */
     if (chip->mode_ch3)
@@ -1472,8 +1457,8 @@ void OPN2_Clock(ym3438_t *chip, int16_t *buffer)
         chip->pg_kcode = chip->kcode[(chip->channel + 1) % 6];
     }
 
-    OPN2_UpdateLFO(chip);
-    OPN2_DoRegWrite(chip);
+    RN_UpdateLFO(chip);
+    RN_DoRegWrite(chip);
     chip->cycles = (chip->cycles + 1) % 24;
     chip->channel = chip->cycles % 6;
 
@@ -1484,7 +1469,7 @@ void OPN2_Clock(ym3438_t *chip, int16_t *buffer)
         chip->status_time--;
 }
 
-void OPN2_Write(ym3438_t *chip, uint32_t port, uint8_t data)
+void RN_Write(RN_Chip *chip, uint32_t port, uint8_t data)
 {
     port &= 3;
     chip->write_data = ((port << 7) & 0x100) | data;
@@ -1500,12 +1485,12 @@ void OPN2_Write(ym3438_t *chip, uint32_t port, uint8_t data)
     }
 }
 
-void OPN2_SetTestPin(ym3438_t *chip, uint32_t value)
+void RN_SetTestPin(RN_Chip *chip, uint32_t value)
 {
     chip->pin_test_in = value & 1;
 }
 
-uint32_t OPN2_ReadTestPin(ym3438_t *chip)
+uint32_t RN_ReadTestPin(RN_Chip *chip)
 {
     if (!chip->mode_test_2c[7])
     {
@@ -1514,12 +1499,12 @@ uint32_t OPN2_ReadTestPin(ym3438_t *chip)
     return chip->cycles == 23;
 }
 
-uint32_t OPN2_ReadIRQPin(ym3438_t *chip)
+uint32_t RN_ReadIRQPin(RN_Chip *chip)
 {
     return chip->timer_a_overflow_flag | chip->timer_b_overflow_flag;
 }
 
-uint8_t OPN2_Read(ym3438_t *chip, uint32_t port)
+uint8_t RN_Read(RN_Chip *chip, uint32_t port)
 {
     if ((port & 3) == 0 || (chip->chip_type & ym3438_mode_readmode))
     {
@@ -1527,8 +1512,7 @@ uint8_t OPN2_Read(ym3438_t *chip, uint32_t port)
         {
             /* Read test data */
             uint32_t slot = (chip->cycles + 18) % 24;
-            uint16_t testdata = ((chip->pg_read & 0x01) << 15)
-                            | ((chip->eg_read[chip->mode_test_21[0]] & 0x01) << 14);
+            uint16_t testdata = ((chip->pg_read & 0x01) << 15) | ((chip->eg_read[chip->mode_test_21[0]] & 0x01) << 14);
             if (chip->mode_test_2c[4])
             {
                 testdata |= chip->ch_read & 0x1ff;
@@ -1548,8 +1532,7 @@ uint8_t OPN2_Read(ym3438_t *chip, uint32_t port)
         }
         else
         {
-            chip->status = (chip->busy << 7) | (chip->timer_b_overflow_flag << 1)
-                 | chip->timer_a_overflow_flag;
+            chip->status = (chip->busy << 7) | (chip->timer_b_overflow_flag << 1) | chip->timer_a_overflow_flag;
         }
         if (chip->chip_type & ym3438_mode_ym2612)
         {
