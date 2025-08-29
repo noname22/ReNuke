@@ -28,6 +28,7 @@ inc = include_directories('include')
 # Process subdirectories
 subdir('include')
 subdir('src')
+subdir('examples')
 
 # Summary
 summary('Build type', get_option('buildtype'))
