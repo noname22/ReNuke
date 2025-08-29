@@ -147,6 +147,9 @@ struct ym3438_t
     uint8_t pms[6];
     uint8_t status;
     uint32_t status_time;
+    
+    /* Chip configuration */
+    uint32_t chip_type;
 };
 
 enum {
@@ -336,7 +339,6 @@ static const uint32_t fm_algorithm[4][6][8] = {
     }
 };
 
-static uint32_t chip_type = ym3438_mode_readmode;
 
 static void OPN2_DoIO(ym3438_t *chip)
 {
@@ -1099,7 +1101,7 @@ static void OPN2_ChOutput(ym3438_t *chip)
     chip->mol = 0;
     chip->mor = 0;
 
-    if (chip_type & ym3438_mode_ym2612)
+    if (chip->chip_type & ym3438_mode_ym2612)
     {
         out_en = ((cycles & 3) == 3) || test_dac;
         /* YM2612 DAC emulation(not verified) */
@@ -1300,12 +1302,13 @@ static void OPN2_KeyOn(ym3438_t*chip)
     }
 }
 
-ym3438_t* OPN2_Create(void)
+ym3438_t* OPN2_Create(uint32_t chip_type)
 {
     ym3438_t *chip = (ym3438_t*)malloc(sizeof(ym3438_t));
     if (chip != NULL)
     {
         memset(chip, 0, sizeof(ym3438_t));
+        chip->chip_type = chip_type;
     }
     return chip;
 }
@@ -1326,7 +1329,9 @@ size_t OPN2_GetSize(void)
 void OPN2_Reset(ym3438_t *chip)
 {
     uint32_t i;
+    uint32_t saved_chip_type = chip->chip_type;
     memset(chip, 0, sizeof(ym3438_t));
+    chip->chip_type = saved_chip_type;
     for (i = 0; i < 24; i++)
     {
         chip->eg_out[i] = 0x3ff;
@@ -1341,10 +1346,6 @@ void OPN2_Reset(ym3438_t *chip)
     }
 }
 
-void OPN2_SetChipType(uint32_t type)
-{
-    chip_type = type;
-}
 
 void OPN2_Clock(ym3438_t *chip, int16_t *buffer)
 {
@@ -1520,7 +1521,7 @@ uint32_t OPN2_ReadIRQPin(ym3438_t *chip)
 
 uint8_t OPN2_Read(ym3438_t *chip, uint32_t port)
 {
-    if ((port & 3) == 0 || (chip_type & ym3438_mode_readmode))
+    if ((port & 3) == 0 || (chip->chip_type & ym3438_mode_readmode))
     {
         if (chip->mode_test_21[6])
         {
@@ -1550,7 +1551,7 @@ uint8_t OPN2_Read(ym3438_t *chip, uint32_t port)
             chip->status = (chip->busy << 7) | (chip->timer_b_overflow_flag << 1)
                  | chip->timer_a_overflow_flag;
         }
-        if (chip_type & ym3438_mode_ym2612)
+        if (chip->chip_type & ym3438_mode_ym2612)
         {
             chip->status_time = 300000;
         }

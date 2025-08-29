@@ -15,7 +15,7 @@ The YM3438 is a CMOS variant of the YM2612 used in Sega MegaDrive(Genesis) and F
 # API Documentation
 ```
 /* Memory management */
-ym3438_t* OPN2_Create(void) - Allocate and initialize chip instance
+ym3438_t* OPN2_Create(uint32_t chip_type) - Allocate and initialize chip instance with type
 void OPN2_Destroy(ym3438_t *chip) - Free chip instance
 size_t OPN2_GetSize(void) - Get structure size in bytes
 

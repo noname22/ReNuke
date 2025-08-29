@@ -15,12 +15,11 @@ enum {
 
 typedef struct ym3438_t ym3438_t;
 
-ym3438_t* OPN2_Create(void);
+ym3438_t* OPN2_Create(uint32_t chip_type);
 void OPN2_Destroy(ym3438_t *chip);
 size_t OPN2_GetSize(void);
 
 void OPN2_Reset(ym3438_t *chip);
-void OPN2_SetChipType(uint32_t type);
 void OPN2_Clock(ym3438_t *chip, int16_t *buffer);
 void OPN2_Write(ym3438_t *chip, uint32_t port, uint8_t data);
 void OPN2_SetTestPin(ym3438_t *chip, uint32_t value);

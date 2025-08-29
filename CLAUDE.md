@@ -17,35 +17,36 @@ The emulator operates at the chip's internal clock level (6 master clocks per in
 ## API Reference
 
 Memory management:
-- `OPN2_Create()` - Allocate and initialize a new chip instance
+- `OPN2_Create(uint32_t chip_type)` - Allocate and initialize a new chip instance with specified type
 - `OPN2_Destroy(ym3438_t *chip)` - Free a chip instance
 - `OPN2_GetSize()` - Get the size of the chip structure in bytes
 
 Core functions for chip emulation:
 - `OPN2_Reset(ym3438_t *chip)` - Reset emulated chip
-- `OPN2_Clock(ym3438_t *chip, Bit32s *buffer)` - Advance chip by 1 internal clock, outputs 9-bit signed MOL/MOR values
-- `OPN2_Write(ym3438_t *chip, Bit32u port, Bit8u data)` - Write to chip port
-- `OPN2_Read(ym3438_t *chip, Bit32u port)` - Read chip status
-- `OPN2_SetTestPin(ym3438_t *chip, Bit32u value)` - Set TEST pin
+- `OPN2_Clock(ym3438_t *chip, int16_t *buffer)` - Advance chip by 1 internal clock, outputs 9-bit signed MOL/MOR values
+- `OPN2_Write(ym3438_t *chip, uint32_t port, uint8_t data)` - Write to chip port
+- `OPN2_Read(ym3438_t *chip, uint32_t port)` - Read chip status
+- `OPN2_SetTestPin(ym3438_t *chip, uint32_t value)` - Set TEST pin
 - `OPN2_ReadTestPin(ym3438_t *chip)` - Read TEST pin
 - `OPN2_ReadIRQPin(ym3438_t *chip)` - Read IRQ pin
 
 ## Key Implementation Details
 
-The emulation uses custom integer types defined in the header:
-- `Bit8u/Bit8s` - 8-bit unsigned/signed
-- `Bit16u/Bit16s` - 16-bit unsigned/signed  
-- `Bit32u/Bit32s` - 32-bit unsigned/signed
-- `Bit64u/Bit64s` - 64-bit unsigned/signed
+The emulation uses standard C99 integer types:
+- `uint8_t/int8_t` - 8-bit unsigned/signed
+- `uint16_t/int16_t` - 16-bit unsigned/signed  
+- `uint32_t/int32_t` - 32-bit unsigned/signed
+- `uint64_t/int64_t` - 64-bit unsigned/signed
 
-The `ym3438_t` structure is now opaque (implementation details hidden). The structure contains the complete chip state including:
+The `ym3438_t` structure is opaque (implementation details hidden). The structure contains the complete chip state including:
 - I/O registers and pins
 - LFO (Low Frequency Oscillator) state
 - Phase generator state for all 24 operators
 - Envelope generator state
 - Channel output accumulators
+- Chip type configuration
 
-Users must use `OPN2_Create()` to allocate chip instances and `OPN2_Destroy()` to free them.
+Users must use `OPN2_Create(chip_type)` to allocate chip instances with the desired chip type and `OPN2_Destroy()` to free them. The chip type is now stored per-instance instead of being global.
 
 ## Emulation Modes
 
