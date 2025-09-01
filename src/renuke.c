@@ -1,11 +1,12 @@
+#include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 #include "renuke.h"
 
 #define SIGN_EXTEND(bit_index, value) (((value) & ((1u << (bit_index)) - 1u)) - ((value) & (1u << (bit_index))))
+#define CLAMP(x, low, high) (((x) < (low)) ? (low) : (((x) > (high)) ? (high) : (x)))
 
-#define RN_WRITEBUF_SIZE 2048
-#define RN_WRITEBUF_DELAY 15
+#define SAMPLE_QUEUE_LENGTH 1024
 
 /* Full structure definition - now private to implementation */
 struct RN_Chip
@@ -154,17 +155,11 @@ struct RN_Chip
     /* Chip configuration */
     RN_ChipType chip_type;
     
-    /* Write buffer for buffered writes */
-    struct {
-        uint64_t time;
-        uint8_t port;
-        uint8_t data;
-        uint8_t reserved[6];
-    } writebuf[RN_WRITEBUF_SIZE];
-    uint64_t writebuf_samplecnt;
-    uint32_t writebuf_cur;
-    uint32_t writebuf_last;
-    uint64_t writebuf_lasttime;
+    /* Buffered output samples */
+    int32_t current_sample[2];
+    int16_t *sample_queue;
+    uint32_t sample_enqueue_position;
+    uint32_t sample_dequeue_position;
 };
 
 enum
@@ -1308,17 +1303,33 @@ static void RN_KeyOn(RN_Chip *chip)
 RN_Chip *RN_Create(RN_ChipType chip_type)
 {
     RN_Chip *chip = calloc(1, sizeof(RN_Chip));
+    assert(chip);
+    if(chip == NULL) goto error;
 
-    if (chip != NULL)
-    {
-        chip->chip_type = chip_type;
-    }
+    chip->chip_type = chip_type;
+    chip->sample_queue = calloc(SAMPLE_QUEUE_LENGTH, sizeof(int16_t) * 2);
+    assert(chip->sample_queue);
+    if(chip->sample_queue == NULL) goto error;
 
     return chip;
+
+    error:
+    RN_Destroy(chip);
+    return NULL;
 }
 
 void RN_Destroy(RN_Chip *chip)
 {
+    if(chip == NULL)
+    {
+        return;
+    }
+
+    if(chip->sample_queue != NULL)
+    {
+        free(chip->sample_queue);
+    }
+
     free(chip);
 }
 
@@ -1331,8 +1342,12 @@ void RN_Reset(RN_Chip *chip)
 {
     uint32_t i;
     RN_ChipType saved_chip_type = chip->chip_type;
+    int16_t *saved_sample_queue = chip->sample_queue;
+
     memset(chip, 0, sizeof(RN_Chip));
     chip->chip_type = saved_chip_type;
+    chip->sample_queue = saved_sample_queue;
+
     for (i = 0; i < 24; i++)
     {
         chip->eg_out[i] = 0x3ff;
@@ -1347,7 +1362,7 @@ void RN_Reset(RN_Chip *chip)
     }
 }
 
-void RN_Clock(RN_Chip *chip, int16_t *buffer)
+void RN_Clock1(RN_Chip *chip, int16_t *buffer)
 {
     uint32_t slot = chip->cycles;
     chip->lfo_inc = chip->mode_test_21[1];
@@ -1565,69 +1580,47 @@ uint8_t RN_Read(RN_Chip *chip, uint32_t port)
     return 0;
 }
 
-void RN_WriteBuffered(RN_Chip *chip, uint32_t port, uint8_t data)
+void RN_Clock(RN_Chip *chip, int clock_count)
 {
-    uint64_t time1, time2;
     int16_t buffer[2];
-    uint64_t skip;
-    
-    if (chip->writebuf[chip->writebuf_last].port & 0x04)
+
+    for(int i = 0; i < clock_count; i++)
     {
-        RN_Write(chip, chip->writebuf[chip->writebuf_last].port & 0x03, 
-                 chip->writebuf[chip->writebuf_last].data);
-        
-        chip->writebuf_cur = (chip->writebuf_last + 1) % RN_WRITEBUF_SIZE;
-        skip = chip->writebuf[chip->writebuf_last].time - chip->writebuf_samplecnt;
-        chip->writebuf_samplecnt = chip->writebuf[chip->writebuf_last].time;
-        
-        while (skip--)
+        RN_Clock1(chip, buffer);
+
+        chip->current_sample[0] += buffer[0];
+        chip->current_sample[1] += buffer[1];
+
+        if(chip->cycles == 0)
         {
-            RN_Clock(chip, buffer);
+            int16_t *next_sample = chip->sample_queue + ((chip->sample_enqueue_position * 2) % SAMPLE_QUEUE_LENGTH);
+
+            next_sample[0] = CLAMP(chip->current_sample[0], -32768, 32767);
+            next_sample[1] = CLAMP(chip->current_sample[1], -32768, 32767);
+
+            chip->current_sample[0] = 0;
+            chip->current_sample[1] = 0;
+
+            chip->sample_enqueue_position++;
         }
     }
-    
-    chip->writebuf[chip->writebuf_last].port = (port & 0x03) | 0x04;
-    chip->writebuf[chip->writebuf_last].data = data;
-    time1 = chip->writebuf_lasttime + RN_WRITEBUF_DELAY;
-    time2 = chip->writebuf_samplecnt;
-    
-    if (time1 < time2)
-    {
-        time1 = time2;
-    }
-    
-    chip->writebuf[chip->writebuf_last].time = time1;
-    chip->writebuf_lasttime = time1;
-    chip->writebuf_last = (chip->writebuf_last + 1) % RN_WRITEBUF_SIZE;
 }
 
-void RN_Generate(RN_Chip *chip, int16_t *stereo_out)
+uint32_t RN_GetQueuedSamplesCount(RN_Chip* chip)
 {
-    int32_t L = 0, R = 0;
-    int16_t b[2];
+    return chip->sample_enqueue_position - chip->sample_dequeue_position;
+}
 
-    for (int i = 0; i < 24; ++i)
-    {
-        RN_Clock(chip, b);
-        L += b[0];
-        R += b[1];
+bool RN_DequeueSample(RN_Chip* chip, int16_t* buffer)
+{
+    if(RN_GetQueuedSamplesCount(chip) == 0) return false;
 
-        while (chip->writebuf[chip->writebuf_cur].time <= chip->writebuf_samplecnt)
-        {
-            if (!(chip->writebuf[chip->writebuf_cur].port & 0x04))
-                break;
+    int16_t *sample = chip->sample_queue + ((chip->sample_dequeue_position * 2) % SAMPLE_QUEUE_LENGTH);
+    
+    buffer[0] = sample[0];
+    buffer[1] = sample[1];
 
-            uint8_t p = chip->writebuf[chip->writebuf_cur].port & 0x03;
-            RN_Write(chip, p, chip->writebuf[chip->writebuf_cur].data);
-            chip->writebuf_cur = (chip->writebuf_cur + 1) % RN_WRITEBUF_SIZE;
-        }
+    chip->sample_dequeue_position++;
 
-        chip->writebuf_samplecnt++;
-    }
-
-    if (L > 32767) L = 32767; else if (L < -32768) L = -32768;
-    if (R > 32767) R = 32767; else if (R < -32768) R = -32768;
-
-    stereo_out[0] = (int16_t)L;
-    stereo_out[1] = (int16_t)R;
+    return true;
 }

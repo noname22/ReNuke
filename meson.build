@@ -3,8 +3,7 @@ project('renuke', 'c',
   license : 'LGPL-2.1-or-later',
   default_options : [
     'c_std=c99',
-    'warning_level=2',
-    'buildtype=release'
+    'warning_level=2'
   ],
   meson_version : '>= 0.50.0'
 )

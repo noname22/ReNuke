@@ -12,9 +12,10 @@ typedef enum {
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
-#define RN_FREQ_NTSC 53267 // 53,267.03869047619Hz
-#define RN_FREQ_PAL  52781 // 52,781.17460317460Hz
+#define RN_SAMPLE_RATE_NTSC 53267 // 53,267.03869047619Hz
+#define RN_SAMPLE_RATE_PAL  52781 // 52,781.17460317460Hz
 
 #define RN_LFO           0x22
 #define RN_TIMERS_CH36   0x27
@@ -37,17 +38,17 @@ typedef struct RN_Chip RN_Chip;
 
 RN_Chip* RN_Create(RN_ChipType chip_type);
 void RN_Destroy(RN_Chip *chip);
-size_t RN_GetSize(void);
 
 void RN_Reset(RN_Chip *chip);
-void RN_Clock(RN_Chip *chip, int16_t *buffer);
 void RN_Write(RN_Chip *chip, uint32_t port, uint8_t data);
-void RN_WriteBuffered(RN_Chip *chip, uint32_t port, uint8_t data);
-void RN_Generate(RN_Chip *chip, int16_t *stereo_out);
+void RN_Clock(RN_Chip *chip, int clock_count);
 void RN_SetTestPin(RN_Chip *chip, uint32_t value);
 uint32_t RN_ReadTestPin(RN_Chip *chip);
 uint32_t RN_ReadIRQPin(RN_Chip *chip);
 uint8_t RN_Read(RN_Chip *chip, uint32_t port);
+
+uint32_t RN_GetQueuedSamplesCount(RN_Chip* chip);
+bool RN_DequeueSample(RN_Chip* chip, int16_t* buffer);
 
 #ifdef __cplusplus
 }

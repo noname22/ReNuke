@@ -20,8 +20,8 @@ void write_wav_header(FILE *f, uint32_t sample_count)
     write_le(f, 4, 16);                    // Format chunk size
     write_le(f, 2, 1);                     // Audio format (PCM)
     write_le(f, 2, 2);                     // Number of channels
-    write_le(f, 4, RN_FREQ_NTSC);          // Sample rate
-    write_le(f, 4, RN_FREQ_NTSC * 4);      // Byte rate
+    write_le(f, 4, RN_SAMPLE_RATE_NTSC);          // Sample rate
+    write_le(f, 4, RN_SAMPLE_RATE_NTSC * 4);      // Byte rate
     write_le(f, 2, 4);                     // Block align
     write_le(f, 2, 16);                    // Bits per sample
     fwrite("data", 1, 4, f);               // Data chunk ID
@@ -30,13 +30,17 @@ void write_wav_header(FILE *f, uint32_t sample_count)
 
 void write_register(RN_Chip *chip, uint32_t part, uint32_t reg, uint8_t data)
 {
-    RN_WriteBuffered(chip, part, (uint8_t)reg);
-    RN_WriteBuffered(chip, part + 1, data);
+    RN_Write(chip, part, (uint8_t)reg);
+    RN_Clock(chip, 32);
+    RN_Write(chip, part + 1, data);
+    RN_Clock(chip, 32);
 }
 
 int main()
 {
+    uint32_t sample_count = RN_SAMPLE_RATE_NTSC * 10;
     RN_Chip *chip = RN_Create(RNCM_YM2612);
+
     if (!chip)
     {
         fprintf(stderr, "Failed to create chip\n");
@@ -103,15 +107,20 @@ int main()
         return 1;
     }
 
-    uint32_t samples = RN_FREQ_NTSC * 10;
-    write_wav_header(f, samples);
+    write_wav_header(f, sample_count);
+    int samples_written = 0;
 
-    for (uint32_t i = 0; i < samples; i++)
+    while(samples_written < sample_count)
     {
-        int16_t buffer[2];
-        RN_Generate(chip, buffer);
-        write_le(f, 2, buffer[0]);
-        write_le(f, 2, buffer[1]);
+        int16_t b[2];
+        while(RN_DequeueSample(chip, b) && samples_written < sample_count)
+        {
+            write_le(f, 2, b[0]);
+            write_le(f, 2, b[1]);
+            samples_written++;
+        }
+
+        RN_Clock(chip, 24);
     }
 
     fclose(f);
