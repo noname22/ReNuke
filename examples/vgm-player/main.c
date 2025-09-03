@@ -68,12 +68,9 @@ typedef struct {
     
     // Playback state
     uint32_t samples_played;
-    uint32_t wait_samples;
+    uint32_t wait_clocks;  // Wait time in YM2612 clock cycles
     bool paused;
     bool loop_enabled;
-    
-    // Sample rate conversion
-    double resample_ratio;
     
     // Audio buffer
     float *audio_buffer;
@@ -277,17 +274,20 @@ static void process_vgm_command(VGMFile *vgm, PlayerState *state)
         case 0x61: // Wait n samples
             if (vgm->pos + 1 < vgm->size) {
                 uint16_t vgm_samples = read_u16_le(&vgm->data[vgm->pos]);
-                state->wait_samples = (uint32_t)(vgm_samples * state->resample_ratio);
+                // Convert 44100 Hz samples to YM2612 clock cycles (53267 Hz * 24 clocks/sample)
+                state->wait_clocks = (uint32_t)((uint64_t)vgm_samples * 53267 * 24 / 44100);
                 vgm->pos += 2;
             }
             break;
             
         case 0x62: // Wait 735 samples (1/60 second)
-            state->wait_samples = (uint32_t)(735 * state->resample_ratio);
+            // Convert 735 samples @ 44100 Hz to clock cycles
+            state->wait_clocks = (uint32_t)((uint64_t)735 * 53267 * 24 / 44100);
             break;
             
         case 0x63: // Wait 882 samples (1/50 second)
-            state->wait_samples = (uint32_t)(882 * state->resample_ratio);
+            // Convert 882 samples @ 44100 Hz to clock cycles
+            state->wait_clocks = (uint32_t)((uint64_t)882 * 53267 * 24 / 44100);
             break;
             
         case 0x66: // End of sound data
@@ -303,11 +303,17 @@ static void process_vgm_command(VGMFile *vgm, PlayerState *state)
             break;
             
         case 0x70 ... 0x7F: // Wait 1-16 samples
-            state->wait_samples = (uint32_t)(((cmd & 0x0F) + 1) * state->resample_ratio);
+            {
+                uint32_t vgm_samples = (cmd & 0x0F) + 1;
+                state->wait_clocks = (uint32_t)((uint64_t)vgm_samples * 53267 * 24 / 44100);
+            }
             break;
             
         case 0x80 ... 0x8F: // YM2612 DAC write + wait
-            state->wait_samples = (uint32_t)((cmd & 0x0F) * state->resample_ratio);
+            {
+                uint32_t vgm_samples = (cmd & 0x0F);
+                state->wait_clocks = (uint32_t)((uint64_t)vgm_samples * 53267 * 24 / 44100);
+            }
             // Read from data bank 0 at current position
             if (vgm->pcm_banks[0] && vgm->pcm_bank_pos[0] < vgm->pcm_bank_sizes[0]) {
                 uint8_t data = vgm->pcm_banks[0][vgm->pcm_bank_pos[0]++];
@@ -351,16 +357,19 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
     }
     
     int samples_written = 0;
-    int total_samples_waited = 0;
     float* cur_buffer = state->audio_buffer;
     
     while (samples_written < samples_needed) {
         // Process VGM commands if no wait pending
-        int command_count = 0;
-        while (state->wait_samples == 0 && state->vgm->pos < state->vgm->size) {
+        while (state->wait_clocks == 0 && state->vgm->pos < state->vgm->size) {
             process_vgm_command(state->vgm, state);
-            command_count++;
-            total_samples_waited += state->wait_samples;
+        }
+        
+        // Clock the chip if we have wait time
+        if (state->wait_clocks > 0) {
+            uint32_t clocks_to_run = state->wait_clocks > 24 ? 24 : state->wait_clocks;
+            RN_Clock(state->ym2612, clocks_to_run);
+            state->wait_clocks -= clocks_to_run;
         }
         
         // Generate samples while we have queued samples and need more output
@@ -387,17 +396,7 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
             *(cur_buffer++) = (ym_out[1] / 65535.0f) * ym_gain + (psg_out[1] / 65535.0f) * psg_gain;
             
             samples_written++;
-            
-            if (state->wait_samples > 0) {
-                state->wait_samples--;
-            }
-
             state->samples_played++;
-        }
-        
-        // Clock the chip to generate more samples if needed
-        if (samples_written < samples_needed) {
-            RN_Clock(state->ym2612, 24);
         }
     }
     
@@ -463,9 +462,6 @@ int main(int argc, char *argv[]) {
     state.last_ym_port = -1;
     state.vgm = vgm;
     state.loop_enabled = true;
-    
-    // Use YM2612 native sample rate - no resampling needed
-    state.resample_ratio = SAMPLE_RATE / (double)44100;
     
     // Create chip emulators (single chip only)
     if (vgm->ym2612_clock & 0x3FFFFFFF) {
@@ -534,7 +530,7 @@ int main(int argc, char *argv[]) {
                     case SDLK_R:
                         vgm->pos = vgm->data_offset;
                         state.samples_played = 0;
-                        state.wait_samples = 0;
+                        state.wait_clocks = 0;
                         break;
                         
                     case SDLK_Q:
