@@ -113,11 +113,7 @@ static VGMFile* load_vgm(const char *filename) {
     }
     fclose(f);
 
-    if (memcmp(data, "Vgm ", 4) != 0) {
-        fprintf(stderr, "Not a VGM file\n");
-        free(data);
-        return NULL;
-    }
+    ASSERT_MSG(memcmp(data, "Vgm ", 4) == 0, "Not a VGM file");
 
     VGMFile *vgm = calloc(1, sizeof(VGMFile));
     if (!vgm) {
@@ -402,59 +398,20 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
     SDL_PutAudioStreamData(stream, state->audio_buffer, additional_amount);
 }
 
-static void print_gd3_info(VGMFile *vgm) {
-    if (!vgm->gd3_offset || vgm->gd3_offset + 0x14 >= vgm->size) {
-        return;
-    }
-    
-    uint8_t *gd3 = vgm->data + 0x14 + vgm->gd3_offset;
-    if (memcmp(gd3, "Gd3 ", 4) != 0) {
-        return;
-    }
-    
-    uint32_t gd3_version = read_u32_le(gd3 + 4);
-    // uint32_t gd3_length = read_u32_le(gd3 + 8);
-    
-    // GD3 contains null-terminated UTF-16 strings
-    // Would need proper UTF-16 parsing for full implementation
-    printf("GD3 Tag Version: %x.%02x\n", (gd3_version >> 8) & 0xFF, gd3_version & 0xFF);
-}
-
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <vgm_file>\n", argv[0]);
-        return 1;
-    }
+    ASSERT_MSG(argc == 2, "Usage: %s <vgm_file>", argv[0])
     
     VGMFile *vgm = load_vgm(argv[1]);
+    ASSERT_MSG(vgm->ym2612_clock < 0x40000000 || vgm->sn76489_clock < 0x40000000, "Dual chips is not supported");
     
-    print_gd3_info(vgm);
-    
-    if (!SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO)) {
-        fprintf(stderr, "SDL init failed: %s\n", SDL_GetError());
-        free(vgm->data);
-        free(vgm);
-        return 1;
-    }
+    bool result = SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO);
+    ASSERT_MSG(result, "SDL init failed: %s", SDL_GetError());
     
     SDL_Window *window = SDL_CreateWindow("VGM Player", 400, 300, 0);
-    if (!window) {
-        fprintf(stderr, "Failed to create window: %s\n", SDL_GetError());
-        free(vgm->data);
-        free(vgm);
-        SDL_Quit();
-        return 1;
-    }
+    ASSERT_MSG(window, "Failed to create window: %s", SDL_GetError());
     
     SDL_Renderer *renderer = SDL_CreateRenderer(window, NULL);
-    if (!renderer) {
-        fprintf(stderr, "Failed to create renderer: %s\n", SDL_GetError());
-        SDL_DestroyWindow(window);
-        free(vgm->data);
-        free(vgm);
-        SDL_Quit();
-        return 1;
-    }
+    ASSERT_MSG(renderer, "Failed to create renderer: %s", SDL_GetError());
     
     PlayerState state = {0};
     state.last_ym_reg = -1;
@@ -462,30 +419,10 @@ int main(int argc, char *argv[]) {
     state.vgm = vgm;
     state.loop_enabled = true;
     
-    // Create chip emulators (single chip only)
-    if (vgm->ym2612_clock & 0x3FFFFFFF) {
-        state.ym2612 = RN_Create(RNCM_YM2612);
-        if (state.ym2612) {
-            RN_Reset(state.ym2612);
-        }
-        
-        // Warn if dual chip detected but ignore it
-        if (vgm->ym2612_clock & 0x40000000) {
-            printf("Warning: Dual YM2612 detected but not supported - using first chip only\n");
-        }
-    }
-    
-    if (vgm->sn76489_clock & 0x3FFFFFFF) {
-        state.psg = SNG_new(vgm->sn76489_clock & 0x3FFFFFFF, SAMPLE_RATE);
-        if (state.psg) {
-            SNG_reset(state.psg);
-        }
-        
-        // Warn if dual chip detected but ignore it
-        if (vgm->sn76489_clock & 0x40000000) {
-            printf("Warning: Dual SN76489 detected but not supported - using first chip only\n");
-        }
-    }
+    // Create chip emulators
+    state.ym2612 = RN_Create(RNCM_YM2612);
+    state.psg = SNG_new(vgm->sn76489_clock & 0x3FFFFFFF, SAMPLE_RATE);
+    SNG_reset(state.psg);
     
     // Setup audio
     SDL_AudioSpec spec = {
@@ -495,17 +432,7 @@ int main(int argc, char *argv[]) {
     };
     
     SDL_AudioStream *audio_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, audio_callback, &state);
-    if (!audio_stream) {
-        fprintf(stderr, "Failed to open audio: %s\n", SDL_GetError());
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        if (state.ym2612) RN_Destroy(state.ym2612);
-        if (state.psg) SNG_delete(state.psg);
-        free(vgm->data);
-        free(vgm);
-        SDL_Quit();
-        return 1;
-    }
+    ASSERT_MSG(audio_stream, "Failed to open audio: %s", SDL_GetError())
     
     SDL_ResumeAudioStreamDevice(audio_stream);
     
