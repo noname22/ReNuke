@@ -42,48 +42,10 @@ typedef struct {
     uint32_t ym2413_clock;
     uint32_t ym2612_clock;
     uint32_t ym2151_clock;
-    uint32_t sega_pcm_clock;
-    uint32_t rf5c68_clock;
-    uint32_t ym2203_clock;
-    uint32_t ym2608_clock;
-    uint32_t ym2610_clock;
-    uint32_t ym3812_clock;
-    uint32_t ym3526_clock;
-    uint32_t y8950_clock;
-    uint32_t ymf262_clock;
-    uint32_t ymf278b_clock;
-    uint32_t ymf271_clock;
-    uint32_t ymz280b_clock;
-    uint32_t rf5c164_clock;
-    uint32_t pwm_clock;
-    uint32_t ay8910_clock;
-    uint32_t gb_dmg_clock;
-    uint32_t nes_apu_clock;
-    uint32_t multipcm_clock;
-    uint32_t upd7759_clock;
-    uint32_t okim6258_clock;
-    uint32_t okim6295_clock;
-    uint32_t k051649_clock;
-    uint32_t k054539_clock;
-    uint32_t huc6280_clock;
-    uint32_t c140_clock;
-    uint32_t k053260_clock;
-    uint32_t pokey_clock;
-    uint32_t qsound_clock;
     
-    // Version 1.51+ fields
+    // Version 1.10+ fields
     uint8_t sn76489_feedback;
     uint8_t sn76489_shift_width;
-    uint8_t sn76489_flags;
-    
-    // Volume modifier
-    uint8_t volume_modifier;
-    
-    // Loop modifier  
-    uint8_t loop_modifier;
-    
-    // Extra header
-    uint32_t extra_header_offset;
     
     // Data blocks
     DataBlock data_blocks[MAX_DATA_BLOCKS];
@@ -95,21 +57,6 @@ typedef struct {
     uint32_t pcm_bank_pos[MAX_PCM_BANKS];
 } VGMFile;
 
-typedef struct {
-    uint32_t frequency;
-    uint32_t position;
-    uint32_t length;
-    uint8_t bank_id;
-    uint8_t step_size;
-    uint8_t step_base;
-    bool playing;
-    bool reverse;
-    bool loop;
-    uint8_t chip_type;
-    uint8_t chip_id;
-    uint8_t port;
-    uint8_t channel;
-} DACStream;
 
 typedef struct {
     // Chip instances (single chip only)
@@ -124,10 +71,6 @@ typedef struct {
     uint32_t wait_samples;
     bool paused;
     bool loop_enabled;
-    
-    // DAC streaming
-    DACStream dac_streams[256];
-    uint8_t dac_stream_count;
     
     // Sample rate conversion
     double resample_ratio;
@@ -207,11 +150,6 @@ static VGMFile* load_vgm(const char *filename) {
     if (vgm->version >= 0x110) {
         vgm->sn76489_feedback = read_u16_le(data + 0x28);
         vgm->sn76489_shift_width = read_u8(data + 0x2A);
-        
-        if (vgm->version >= 0x151) {
-            vgm->sn76489_flags = read_u8(data + 0x2B);
-        }
-        
         vgm->ym2612_clock = read_u32_le(data + 0x2C);
         vgm->ym2151_clock = read_u32_le(data + 0x30);
     }
@@ -226,50 +164,6 @@ static VGMFile* load_vgm(const char *filename) {
         }
     } else {
         vgm->data_offset = 0x40;
-    }
-    
-    // Version 1.51+ fields
-    if (vgm->version >= 0x151) {
-        vgm->sega_pcm_clock = read_u32_le(data + 0x38);
-        vgm->rf5c68_clock = read_u32_le(data + 0x40);
-        vgm->ym2203_clock = read_u32_le(data + 0x44);
-        vgm->ym2608_clock = read_u32_le(data + 0x48);
-        vgm->ym2610_clock = read_u32_le(data + 0x4C);
-        vgm->ym3812_clock = read_u32_le(data + 0x50);
-        vgm->ym3526_clock = read_u32_le(data + 0x54);
-        vgm->y8950_clock = read_u32_le(data + 0x58);
-        vgm->ymf262_clock = read_u32_le(data + 0x5C);
-        vgm->ymf278b_clock = read_u32_le(data + 0x60);
-        vgm->ymf271_clock = read_u32_le(data + 0x64);
-        vgm->ymz280b_clock = read_u32_le(data + 0x68);
-        vgm->rf5c164_clock = read_u32_le(data + 0x6C);
-        vgm->pwm_clock = read_u32_le(data + 0x70);
-        vgm->ay8910_clock = read_u32_le(data + 0x74);
-        
-        if (vgm->version >= 0x160) {
-            vgm->volume_modifier = read_u8(data + 0x7C);
-            vgm->loop_modifier = read_u8(data + 0x7F);
-        }
-        
-        if (vgm->version >= 0x161) {
-            vgm->gb_dmg_clock = read_u32_le(data + 0x80);
-            vgm->nes_apu_clock = read_u32_le(data + 0x84);
-            vgm->multipcm_clock = read_u32_le(data + 0x88);
-            vgm->upd7759_clock = read_u32_le(data + 0x8C);
-            vgm->okim6258_clock = read_u32_le(data + 0x90);
-            vgm->okim6295_clock = read_u32_le(data + 0x98);
-            vgm->k051649_clock = read_u32_le(data + 0x9C);
-            vgm->k054539_clock = read_u32_le(data + 0xA0);
-            vgm->huc6280_clock = read_u32_le(data + 0xA4);
-            vgm->c140_clock = read_u32_le(data + 0xA8);
-            vgm->k053260_clock = read_u32_le(data + 0xAC);
-            vgm->pokey_clock = read_u32_le(data + 0xB0);
-            vgm->qsound_clock = read_u32_le(data + 0xB4);
-        }
-        
-        if (vgm->version >= 0x170) {
-            vgm->extra_header_offset = read_u32_le(data + 0xBC);
-        }
     }
     
     vgm->pos = vgm->data_offset;
