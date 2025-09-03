@@ -212,6 +212,14 @@ static void process_data_block(VGMFile *vgm, PlayerState *state) {
     vgm->pos += block_size;
 }
 
+static inline uint32_t vgm_samples_to_clocks(uint32_t vgm_samples, VGMFile *vgm) {
+    // VGM uses 44100 Hz sample rate
+    // YM2612 runs at chip_clock Hz with 6 master clocks per internal clock
+    // and generates one sample every 24 internal clocks (144 master clocks)
+    uint32_t chip_clock = vgm->ym2612_clock & 0x3FFFFFFF;
+    return (uint32_t)((uint64_t)vgm_samples * chip_clock / (44100 * 6));
+}
+
 void ym_write(PlayerState *state, uint32_t port, uint8_t reg, uint8_t val)
 {
     if (state->ym2612)
@@ -220,7 +228,7 @@ void ym_write(PlayerState *state, uint32_t port, uint8_t reg, uint8_t val)
         if (state->last_ym_port != port || state->last_ym_reg != reg)
         {
             RN_Write(state->ym2612, port, reg);
-            RN_Clock(state->ym2612, 12); // Timing delay
+            RN_Clock(state->ym2612, 12);
 
             state->last_ym_reg = reg;
             state->last_ym_port = port;
@@ -230,7 +238,7 @@ void ym_write(PlayerState *state, uint32_t port, uint8_t reg, uint8_t val)
 
         if(port != 0 || reg != 0x2A)
         {
-            RN_Clock(state->ym2612, 32); // Timing delay
+            RN_Clock(state->ym2612, 32);
         }
     }
 }
@@ -274,20 +282,17 @@ static void process_vgm_command(VGMFile *vgm, PlayerState *state)
         case 0x61: // Wait n samples
             if (vgm->pos + 1 < vgm->size) {
                 uint16_t vgm_samples = read_u16_le(&vgm->data[vgm->pos]);
-                // Convert 44100 Hz samples to YM2612 clock cycles (53267 Hz * 24 clocks/sample)
-                state->wait_clocks = (uint32_t)((uint64_t)vgm_samples * 53267 * 24 / 44100);
+                state->wait_clocks = vgm_samples_to_clocks(vgm_samples, vgm);
                 vgm->pos += 2;
             }
             break;
             
         case 0x62: // Wait 735 samples (1/60 second)
-            // Convert 735 samples @ 44100 Hz to clock cycles
-            state->wait_clocks = (uint32_t)((uint64_t)735 * 53267 * 24 / 44100);
+            state->wait_clocks = vgm_samples_to_clocks(735, vgm);
             break;
             
         case 0x63: // Wait 882 samples (1/50 second)
-            // Convert 882 samples @ 44100 Hz to clock cycles
-            state->wait_clocks = (uint32_t)((uint64_t)882 * 53267 * 24 / 44100);
+            state->wait_clocks = vgm_samples_to_clocks(882, vgm);
             break;
             
         case 0x66: // End of sound data
@@ -303,17 +308,11 @@ static void process_vgm_command(VGMFile *vgm, PlayerState *state)
             break;
             
         case 0x70 ... 0x7F: // Wait 1-16 samples
-            {
-                uint32_t vgm_samples = (cmd & 0x0F) + 1;
-                state->wait_clocks = (uint32_t)((uint64_t)vgm_samples * 53267 * 24 / 44100);
-            }
+            state->wait_clocks = vgm_samples_to_clocks((cmd & 0x0F) + 1, vgm);
             break;
             
         case 0x80 ... 0x8F: // YM2612 DAC write + wait
-            {
-                uint32_t vgm_samples = (cmd & 0x0F);
-                state->wait_clocks = (uint32_t)((uint64_t)vgm_samples * 53267 * 24 / 44100);
-            }
+            state->wait_clocks = vgm_samples_to_clocks(cmd & 0x0F, vgm);
             // Read from data bank 0 at current position
             if (vgm->pcm_banks[0] && vgm->pcm_bank_pos[0] < vgm->pcm_bank_sizes[0]) {
                 uint8_t data = vgm->pcm_banks[0][vgm->pcm_bank_pos[0]++];
@@ -367,7 +366,7 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
         
         // Clock the chip if we have wait time
         if (state->wait_clocks > 0) {
-            uint32_t clocks_to_run = state->wait_clocks > 24 ? 24 : state->wait_clocks;
+            uint32_t clocks_to_run = state->wait_clocks > 512 ? 512 : state->wait_clocks;
             RN_Clock(state->ym2612, clocks_to_run);
             state->wait_clocks -= clocks_to_run;
         }
