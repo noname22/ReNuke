@@ -352,12 +352,11 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
             process_vgm_command(state->vgm, state);
         }
         
-        // Clock the chip if we have wait time
-        if (state->wait_clocks > 0) {
-            uint32_t clocks_to_run = state->wait_clocks > 512 ? 512 : state->wait_clocks;
-            RN_Clock(state->ym2612, clocks_to_run);
-            state->wait_clocks -= clocks_to_run;
-        }
+        // Clock the chip with the wait clocks (or 512, one sample, if wait_clocks is 0 at this point, ie. the song has ended)
+        int wait_clocks = state->wait_clocks > 0 ? state->wait_clocks : 24;
+        int clocks_to_run = wait_clocks > 512 ? 512 : wait_clocks;
+        RN_Clock(state->ym2612, clocks_to_run);
+        state->wait_clocks -= clocks_to_run;
         
         // Generate samples while we have queued samples and need more output
         int16_t buffer[256 * 2];
