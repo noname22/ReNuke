@@ -7,20 +7,25 @@ words:
   - dacdata
   - dacen
   - exprom
-  - KEYONOFF
+  - GGIO
   - kcode
+  - KEYONOFF
   - koff
   - LFOSEN
   - logsinrom
+  - multipcm
   - nkon
   - NTSC
+  - okim
   - okon
   - PAL
   - pgrst
+  - qsound
   - ratemax
   - RENUKE
   - RNCM
   - samplecnt
+  - SDLK
   - SSGEG
   - stephi
   - Tera
