@@ -73,7 +73,7 @@ typedef struct {
     bool loop_enabled;
     
     // Audio buffer
-    float *audio_buffer;
+    int16_t *audio_buffer;
     size_t audio_buffer_size;
 
     int last_ym_port;
@@ -335,7 +335,7 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
         return;
     }
     
-    int samples_needed = additional_amount / (sizeof(float) * 2);
+    int samples_needed = additional_amount / (sizeof(int16_t) * 2);
     
     // Reallocate buffer if needed
     if (state->audio_buffer_size < additional_amount) {
@@ -344,7 +344,7 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
         state->audio_buffer_size = additional_amount;
     }
     
-    float* cur_buffer = state->audio_buffer;
+    int16_t* cur_buffer = state->audio_buffer;
     
     while (samples_needed > 0) {
         // Process VGM commands if no wait pending
@@ -370,12 +370,15 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
             
             SNG_calc_stereo(state->psg, psg_out);
             
-            float ym_gain = 32.0f;
-            float psg_gain = 4.0f;
+            int32_t ym_gain = 32;
+            int32_t psg_gain = 4;
 
-            // Mix outputs
-            *(cur_buffer++) = (ym_out[0] / 65535.0f) * ym_gain + (psg_out[0] / 65535.0f) * psg_gain;
-            *(cur_buffer++) = (ym_out[1] / 65535.0f) * ym_gain + (psg_out[1] / 65535.0f) * psg_gain;
+            // Mix outputs with proper clamping
+            int32_t left = (ym_out[0] * ym_gain) + (psg_out[0] * psg_gain);
+            int32_t right = (ym_out[1] * ym_gain) + (psg_out[1] * psg_gain);
+            
+            *(cur_buffer++) = CLAMP(left, -32768, 32767);
+            *(cur_buffer++) = CLAMP(right, -32768, 32767);
             
             state->samples_played++;
         }
@@ -414,7 +417,7 @@ int main(int argc, char *argv[]) {
     
     // Setup audio
     SDL_AudioSpec spec = {
-        .format = SDL_AUDIO_F32LE,
+        .format = SDL_AUDIO_S16LE,
         .channels = 2,
         .freq = SAMPLE_RATE,
     };
