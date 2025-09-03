@@ -160,13 +160,7 @@ static VGMFile* load_vgm(const char *filename) {
     }
     
     vgm->pos = vgm->data_offset;
-    
-    printf("VGM Version: %x.%02x\n", (vgm->version >> 8) & 0xFF, vgm->version & 0xFF);
-    if (vgm->ym2612_clock) printf("YM2612 Clock: %u Hz\n", vgm->ym2612_clock & 0x3FFFFFFF);
-    if (vgm->sn76489_clock) printf("SN76489 Clock: %u Hz\n", vgm->sn76489_clock & 0x3FFFFFFF);
-    printf("Sample Count: %u\n", vgm->sample_count);
-    if (vgm->loop_offset) printf("Loop Point: Sample %u\n", vgm->loop_samples);
-    
+
     return vgm;
 }
 
@@ -208,12 +202,11 @@ static void process_data_block(VGMFile *vgm, PlayerState *state) {
     vgm->pos += block_size;
 }
 
-static inline uint32_t vgm_samples_to_clocks(uint32_t vgm_samples, VGMFile *vgm) {
+static inline uint32_t vgm_samples_to_clocks(VGMFile *vgm, uint32_t vgm_samples) {
     // VGM uses 44100 Hz sample rate
     // YM2612 runs at chip_clock Hz with 6 master clocks per internal clock
     // and generates one sample every 24 internal clocks (144 master clocks)
-    uint32_t chip_clock = vgm->ym2612_clock & 0x3FFFFFFF;
-    return (uint32_t)((uint64_t)vgm_samples * chip_clock / (44100 * 6));
+    return (uint32_t)((uint64_t)vgm_samples * vgm->ym2612_clock / (44100 * 6));
 }
 
 void ym_write(PlayerState *state, uint32_t port, uint8_t reg, uint8_t val)
@@ -278,17 +271,17 @@ static void process_vgm_command(VGMFile *vgm, PlayerState *state)
         case 0x61: // Wait n samples
             if (vgm->pos + 1 < vgm->size) {
                 uint16_t vgm_samples = read_u16_le(&vgm->data[vgm->pos]);
-                state->wait_clocks = vgm_samples_to_clocks(vgm_samples, vgm);
+                state->wait_clocks = vgm_samples_to_clocks(vgm, vgm_samples);
                 vgm->pos += 2;
             }
             break;
             
         case 0x62: // Wait 735 samples (1/60 second)
-            state->wait_clocks = vgm_samples_to_clocks(735, vgm);
+            state->wait_clocks = vgm_samples_to_clocks(vgm, 735);
             break;
             
         case 0x63: // Wait 882 samples (1/50 second)
-            state->wait_clocks = vgm_samples_to_clocks(882, vgm);
+            state->wait_clocks = vgm_samples_to_clocks(vgm, 882);
             break;
             
         case 0x66: // End of sound data
@@ -304,11 +297,11 @@ static void process_vgm_command(VGMFile *vgm, PlayerState *state)
             break;
             
         case 0x70 ... 0x7F: // Wait 1-16 samples
-            state->wait_clocks = vgm_samples_to_clocks((cmd & 0x0F) + 1, vgm);
+            state->wait_clocks = vgm_samples_to_clocks(vgm, (cmd & 0x0F) + 1);
             break;
             
         case 0x80 ... 0x8F: // YM2612 DAC write + wait
-            state->wait_clocks = vgm_samples_to_clocks(cmd & 0x0F, vgm);
+            state->wait_clocks = vgm_samples_to_clocks(vgm, cmd & 0x0F);
             // Read from data bank 0 at current position
             if (vgm->pcm_banks[0] && vgm->pcm_bank_pos[0] < vgm->pcm_bank_sizes[0]) {
                 uint8_t data = vgm->pcm_banks[0][vgm->pcm_bank_pos[0]++];
@@ -421,7 +414,7 @@ int main(int argc, char *argv[]) {
     
     // Create chip emulators
     state.ym2612 = RN_Create(RNCM_YM2612);
-    state.psg = SNG_new(vgm->sn76489_clock & 0x3FFFFFFF, SAMPLE_RATE);
+    state.psg = SNG_new(vgm->sn76489_clock, SAMPLE_RATE);
     SNG_reset(state.psg);
     
     // Setup audio
@@ -473,34 +466,42 @@ int main(int argc, char *argv[]) {
         
         // Set text color to white
         SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-        
+
+        int col = 0;
+        #define DRAW_TEXT(...) SDL_RenderDebugTextFormat(renderer, 10, col += 10, __VA_ARGS__);
+
         // Show VGM info
-        SDL_RenderDebugTextFormat(renderer, 10, 10, "== VGM Player ==");
+        DRAW_TEXT("== VGM Player ==");
+        col += 10;
         
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 
-        if (vgm->ym2612_clock) {
-            SDL_RenderDebugTextFormat(renderer, 10, 30, "YM2612: %u Hz", vgm->ym2612_clock & 0x3FFFFFFF);
-        }
+        uint32_t loop_duration = vgm->loop_samples / 44100;
+        uint32_t loop_offset = vgm->loop_offset / 44100;
+
+        DRAW_TEXT("VGM version: %x.%02x\n", (vgm->version >> 8) & 0xFF, vgm->version & 0xFF);
+        DRAW_TEXT("YM2612: %u Hz", vgm->ym2612_clock);
+        DRAW_TEXT("SN76489: %u Hz", vgm->sn76489_clock);
+        col += 10;
         
-        if (vgm->sn76489_clock) {
-            SDL_RenderDebugTextFormat(renderer, 10, 50, "SN76489: %u Hz", vgm->sn76489_clock & 0x3FFFFFFF);
-        }
+        DRAW_TEXT("Loop offset: %02u:%02u", loop_offset / 60, loop_offset % 60);
+        DRAW_TEXT("Loop duration: %02u:%02u", loop_duration / 60, loop_duration % 60);
+        col += 10;
         
         // Show playback status
         uint32_t total_time = vgm->sample_count / 44100;
         uint32_t current_time = state.samples_played / SAMPLE_RATE;
-        SDL_RenderDebugTextFormat(renderer, 10, 80, "Time: %02u:%02u / %02u:%02u",
-            current_time / 60, current_time % 60, total_time / 60, total_time % 60);
-        SDL_RenderDebugTextFormat(renderer, 10, 100, "Status: %s", state.paused ? "PAUSED" : "PLAYING");
-        SDL_RenderDebugTextFormat(renderer, 10, 120, "Looping: %s", state.loop_enabled ? "ON" : "OFF");
+        DRAW_TEXT("Time: %02u:%02u / %02u:%02u", current_time / 60, current_time % 60, total_time / 60, total_time % 60);
+        DRAW_TEXT("Status: %s", state.paused ? "PAUSED" : "PLAYING");
+        DRAW_TEXT("Looping: %s", state.loop_enabled ? "ON" : "OFF");
+        col += 10;
         
         // Show controls
-        SDL_RenderDebugText(renderer, 10, 160, "Controls:");
-        SDL_RenderDebugText(renderer, 10, 180, "  Space: Pause/Resume");
-        SDL_RenderDebugText(renderer, 10, 200, "  L: Toggle looping");
-        SDL_RenderDebugText(renderer, 10, 220, "  R: Restart");
-        SDL_RenderDebugText(renderer, 10, 240, "  Q/Escape: Quit");
+        DRAW_TEXT("Controls:");
+        DRAW_TEXT("  Space: Pause/Resume");
+        DRAW_TEXT("  L: Toggle looping");
+        DRAW_TEXT("  R: Restart");
+        DRAW_TEXT("  Q/Escape: Quit");
         
         SDL_RenderPresent(renderer);
         SDL_Delay(16); // ~60 FPS

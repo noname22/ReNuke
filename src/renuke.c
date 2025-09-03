@@ -6,8 +6,6 @@
 #define SIGN_EXTEND(bit_index, value) (((value) & ((1u << (bit_index)) - 1u)) - ((value) & (1u << (bit_index))))
 #define CLAMP(x, low, high) (((x) < (low)) ? (low) : (((x) > (high)) ? (high) : (x)))
 
-#define SAMPLE_QUEUE_LENGTH 1024
-
 /* Full structure definition - now private to implementation */
 struct RN_Chip
 {
@@ -1307,9 +1305,11 @@ RN_Chip *RN_Create(RN_ChipType chip_type)
     if(chip == NULL) goto error;
 
     chip->chip_type = chip_type;
-    chip->sample_queue = calloc(SAMPLE_QUEUE_LENGTH, sizeof(int16_t) * 2);
+    chip->sample_queue = calloc(RN_SAMPLE_QUEUE_LENGTH, sizeof(int16_t) * 2);
     assert(chip->sample_queue);
     if(chip->sample_queue == NULL) goto error;
+
+    RN_Reset(chip);
 
     return chip;
 
@@ -1593,7 +1593,7 @@ void RN_Clock(RN_Chip *chip, int clock_count)
 
         if(chip->cycles == 0)
         {
-            int16_t *next_sample = chip->sample_queue + ((chip->sample_enqueue_position * 2) % SAMPLE_QUEUE_LENGTH);
+            int16_t *next_sample = chip->sample_queue + ((chip->sample_enqueue_position * 2) % RN_SAMPLE_QUEUE_LENGTH);
 
             next_sample[0] = CLAMP(chip->current_sample[0], -32768, 32767);
             next_sample[1] = CLAMP(chip->current_sample[1], -32768, 32767);
@@ -1615,7 +1615,7 @@ bool RN_DequeueSample(RN_Chip* chip, int16_t* buffer)
 {
     if(RN_GetQueuedSamplesCount(chip) == 0) return false;
 
-    int16_t *sample = chip->sample_queue + ((chip->sample_dequeue_position * 2) % SAMPLE_QUEUE_LENGTH);
+    int16_t *sample = chip->sample_queue + ((chip->sample_dequeue_position * 2) % RN_SAMPLE_QUEUE_LENGTH);
     
     buffer[0] = sample[0];
     buffer[1] = sample[1];
