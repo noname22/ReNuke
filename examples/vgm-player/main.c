@@ -368,7 +368,7 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
             
             // Get YM2612 sample
             if (state->ym2612) {
-                RN_DequeueSample(state->ym2612, ym_out);
+                RN_DequeueSamples(state->ym2612, ym_out, 1);
             }
             
             // Generate PSG sample

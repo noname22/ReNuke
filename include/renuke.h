@@ -50,7 +50,7 @@ uint32_t RN_ReadIRQPin(RN_Chip *chip);
 uint8_t RN_Read(RN_Chip *chip, uint32_t port);
 
 uint32_t RN_GetQueuedSamplesCount(RN_Chip* chip);
-bool RN_DequeueSample(RN_Chip* chip, int16_t* buffer);
+uint32_t RN_DequeueSamples(RN_Chip* chip, int16_t* buffer, uint32_t sample_count);
 
 #ifdef __cplusplus
 }

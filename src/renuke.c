@@ -1611,16 +1611,19 @@ uint32_t RN_GetQueuedSamplesCount(RN_Chip* chip)
     return chip->sample_enqueue_position - chip->sample_dequeue_position;
 }
 
-bool RN_DequeueSample(RN_Chip* chip, int16_t* buffer)
+uint32_t RN_DequeueSamples(RN_Chip* chip, int16_t* buffer, uint32_t sample_count)
 {
-    if(RN_GetQueuedSamplesCount(chip) == 0) return false;
-
-    int16_t *sample = chip->sample_queue + ((chip->sample_dequeue_position * 2) % RN_SAMPLE_QUEUE_LENGTH);
+    uint32_t available = RN_GetQueuedSamplesCount(chip);
+    uint32_t to_dequeue = (sample_count < available) ? sample_count : available;
     
-    buffer[0] = sample[0];
-    buffer[1] = sample[1];
+    for(uint32_t i = 0; i < to_dequeue; i++) {
+        int16_t *sample = chip->sample_queue + ((chip->sample_dequeue_position * 2) % RN_SAMPLE_QUEUE_LENGTH);
+        
+        buffer[i * 2] = sample[0];     // Left channel
+        buffer[i * 2 + 1] = sample[1]; // Right channel
 
-    chip->sample_dequeue_position++;
+        chip->sample_dequeue_position++;
+    }
 
-    return true;
+    return to_dequeue;
 }

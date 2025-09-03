@@ -113,7 +113,7 @@ int main()
     while(samples_written < sample_count)
     {
         int16_t b[2];
-        while(RN_DequeueSample(chip, b) && samples_written < sample_count)
+        while(RN_DequeueSamples(chip, b, 1) > 0 && samples_written < sample_count)
         {
             write_le(f, 2, b[0]);
             write_le(f, 2, b[1]);
