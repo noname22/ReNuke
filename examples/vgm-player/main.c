@@ -344,10 +344,9 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
         state->audio_buffer_size = additional_amount;
     }
     
-    int samples_written = 0;
     float* cur_buffer = state->audio_buffer;
     
-    while (samples_written < samples_needed) {
+    while (samples_needed > 0) {
         // Process VGM commands if no wait pending
         while (state->wait_clocks == 0 && state->vgm->pos < state->vgm->size) {
             process_vgm_command(state->vgm, state);
@@ -361,20 +360,15 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
         }
         
         // Generate samples while we have queued samples and need more output
-        while (RN_GetQueuedSamplesCount(state->ym2612) > 0 && samples_written < samples_needed)
+        int16_t buffer[256 * 2];
+        int samples_dequeued = RN_DequeueSamples(state->ym2612, buffer, samples_needed > 256 ? 256 : samples_needed);
+        
+        for(int i = 0; i < samples_dequeued; i++)
         {
             int32_t psg_out[2] = {0, 0};
-            int16_t ym_out[2] = {0, 0};
+            int16_t* ym_out = buffer + i * 2;
             
-            // Get YM2612 sample
-            if (state->ym2612) {
-                RN_DequeueSamples(state->ym2612, ym_out, 1);
-            }
-            
-            // Generate PSG sample
-            if (state->psg) {
-                SNG_calc_stereo(state->psg, psg_out);
-            }
+            SNG_calc_stereo(state->psg, psg_out);
             
             float ym_gain = 32.0f;
             float psg_gain = 4.0f;
@@ -383,9 +377,10 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
             *(cur_buffer++) = (ym_out[0] / 65535.0f) * ym_gain + (psg_out[0] / 65535.0f) * psg_gain;
             *(cur_buffer++) = (ym_out[1] / 65535.0f) * ym_gain + (psg_out[1] / 65535.0f) * psg_gain;
             
-            samples_written++;
             state->samples_played++;
         }
+
+        samples_needed -= samples_dequeued;
     }
     
     SDL_PutAudioStreamData(stream, state->audio_buffer, additional_amount);

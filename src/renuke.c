@@ -1616,14 +1616,28 @@ uint32_t RN_DequeueSamples(RN_Chip* chip, int16_t* buffer, uint32_t sample_count
     uint32_t available = RN_GetQueuedSamplesCount(chip);
     uint32_t to_dequeue = (sample_count < available) ? sample_count : available;
     
-    for(uint32_t i = 0; i < to_dequeue; i++) {
-        int16_t *sample = chip->sample_queue + ((chip->sample_dequeue_position * 2) % RN_SAMPLE_QUEUE_LENGTH);
+    if (to_dequeue == 0) return 0;
+    
+    uint32_t queue_samples = RN_SAMPLE_QUEUE_LENGTH / 2;  // Each sample is 2 int16_t (stereo)
+    uint32_t start_pos = chip->sample_dequeue_position % queue_samples;
+    uint32_t samples_until_wrap = queue_samples - start_pos;
+    
+    if (to_dequeue <= samples_until_wrap) {
+        // No wraparound needed - single memcpy
+        int16_t *src = chip->sample_queue + (start_pos * 2);
+        memcpy(buffer, src, to_dequeue * 2 * sizeof(int16_t));
+    } else {
+        // Need to handle wraparound - two memcpy calls
+        int16_t *src = chip->sample_queue + (start_pos * 2);
         
-        buffer[i * 2] = sample[0];     // Left channel
-        buffer[i * 2 + 1] = sample[1]; // Right channel
-
-        chip->sample_dequeue_position++;
+        // Copy from current position to end of buffer
+        memcpy(buffer, src, samples_until_wrap * 2 * sizeof(int16_t));
+        
+        // Copy remaining samples from beginning of buffer
+        uint32_t remaining = to_dequeue - samples_until_wrap;
+        memcpy(buffer + (samples_until_wrap * 2), chip->sample_queue, remaining * 2 * sizeof(int16_t));
     }
-
+    
+    chip->sample_dequeue_position += to_dequeue;
     return to_dequeue;
 }
