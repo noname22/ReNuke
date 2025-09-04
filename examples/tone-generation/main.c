@@ -30,10 +30,8 @@ void write_wav_header(FILE *f, uint32_t sample_count)
 
 void write_register(RN_Chip *chip, uint32_t part, uint32_t reg, uint8_t data)
 {
-    RN_Write(chip, part, (uint8_t)reg);
-    RN_Clock(chip, 32);
-    RN_Write(chip, part + 1, data);
-    RN_Clock(chip, 32);
+    RN_ScheduleWrite(chip, part, (uint8_t)reg);
+    RN_ScheduleWrite(chip, part + 1, data);
 }
 
 int main()
@@ -92,7 +90,7 @@ int main()
 
     // Pitch A4 (440 Hz)
     int block = 4;
-    int freq_number = 541;  // A4 from YM2612 frequency table
+    int freq_number = 1082;  // A4 from YM2612 frequency table
     write_register(chip, 0, RN_FREQ_BLOCK_MSB, (block << 3) | (freq_number >> 8));
     write_register(chip, 0, RN_FREQ_LSB, freq_number & 0xFF);
 
