@@ -12,7 +12,6 @@
 
 #define ASSERT_MSG(_v, ...) if(!(_v)) { fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n"); exit(1); }
 #define CLAMP(x, low, high) (((x) < (low)) ? (low) : (((x) > (high)) ? (high) : (x)))
-#define SAMPLE_RATE RN_SAMPLE_RATE_NTSC
 #define MAX_DATA_BLOCKS 256
 #define MAX_PCM_BANKS 40
 
@@ -211,25 +210,15 @@ static inline uint32_t vgm_samples_to_clocks(VGMFile *vgm, uint32_t vgm_samples)
 
 void ym_write(PlayerState *state, uint32_t port, uint8_t reg, uint8_t val)
 {
-    if (state->ym2612)
+    if (state->last_ym_port != port || state->last_ym_reg != reg)
     {
+        RN_ScheduleWrite(state->ym2612, port, reg);
 
-        if (state->last_ym_port != port || state->last_ym_reg != reg)
-        {
-            RN_Write(state->ym2612, port, reg);
-            RN_Clock(state->ym2612, 12);
-
-            state->last_ym_reg = reg;
-            state->last_ym_port = port;
-        }
-
-        RN_Write(state->ym2612, port + 1, val);
-
-        if(port != 0 || reg != 0x2A)
-        {
-            RN_Clock(state->ym2612, 32);
-        }
+        state->last_ym_reg = reg;
+        state->last_ym_port = port;
     }
+
+    RN_ScheduleWrite(state->ym2612, port + 1, val);
 }
 
 static void process_vgm_command(VGMFile *vgm, PlayerState *state)
@@ -369,12 +358,11 @@ static void audio_callback(void *userdata, SDL_AudioStream *stream, int addition
             
             SNG_calc_stereo(state->psg, psg_out);
             
-            int32_t ym_gain = 32;
             int32_t psg_gain = 4;
 
             // Mix outputs with proper clamping
-            int32_t left = (ym_out[0] * ym_gain) + (psg_out[0] * psg_gain);
-            int32_t right = (ym_out[1] * ym_gain) + (psg_out[1] * psg_gain);
+            int32_t left = ym_out[0] + (psg_out[0] * psg_gain);
+            int32_t right = ym_out[1] + (psg_out[1] * psg_gain);
             
             *(cur_buffer++) = CLAMP(left, -32768, 32767);
             *(cur_buffer++) = CLAMP(right, -32768, 32767);
@@ -409,16 +397,18 @@ int main(int argc, char *argv[]) {
     state.vgm = vgm;
     state.loop_enabled = true;
     
+    int sample_rate = vgm->rate == 50 ? RN_SAMPLE_RATE_PAL : RN_SAMPLE_RATE_NTSC;
+
     // Create chip emulators
     state.ym2612 = RN_Create(RNCM_YM2612);
-    state.psg = SNG_new(vgm->sn76489_clock, SAMPLE_RATE);
+    state.psg = SNG_new(vgm->sn76489_clock, sample_rate);
     SNG_reset(state.psg);
     
     // Setup audio
     SDL_AudioSpec spec = {
         .format = SDL_AUDIO_S16LE,
         .channels = 2,
-        .freq = SAMPLE_RATE,
+        .freq = sample_rate,
     };
     
     SDL_AudioStream *audio_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, audio_callback, &state);
@@ -487,7 +477,7 @@ int main(int argc, char *argv[]) {
         
         // Show playback status
         uint32_t total_time = vgm->sample_count / 44100;
-        uint32_t current_time = state.samples_played / SAMPLE_RATE;
+        uint32_t current_time = state.samples_played / sample_rate;
         DRAW_TEXT("Time: %02u:%02u / %02u:%02u", current_time / 60, current_time % 60, total_time / 60, total_time % 60);
         DRAW_TEXT("Status: %s", state.paused ? "PAUSED" : "PLAYING");
         DRAW_TEXT("Looping: %s", state.loop_enabled ? "ON" : "OFF");

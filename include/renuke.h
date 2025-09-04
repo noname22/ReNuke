@@ -12,12 +12,12 @@ typedef enum {
 
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>
 
 #define RN_SAMPLE_RATE_NTSC 53267 // 53,267.03869047619Hz
 #define RN_SAMPLE_RATE_PAL  52781 // 52,781.17460317460Hz
 
 #define RN_SAMPLE_QUEUE_LENGTH 1024
+#define RN_WRITE_QUEUE_LENGTH 1024
 
 #define RN_LFO           0x22
 #define RN_TIMERS_CH36   0x27
@@ -51,6 +51,9 @@ uint8_t RN_Read(RN_Chip *chip, uint32_t port);
 
 uint32_t RN_GetQueuedSamplesCount(RN_Chip* chip);
 uint32_t RN_DequeueSamples(RN_Chip* chip, int16_t* buffer, uint32_t sample_count);
+
+// Schedules a write after waiting for the last write to finish
+void RN_ScheduleWrite(RN_Chip* chip, uint32_t port, uint8_t data);
 
 #ifdef __cplusplus
 }

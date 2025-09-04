@@ -1,0 +1,52 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build VGM Player (Debug)",
+            "type": "shell",
+            "command": "meson setup build --buildtype=debug && ninja -C build examples/vgm-player/vgm-player",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Build Tone Generator (Debug)",
+            "type": "shell",
+            "command": "meson setup build --buildtype=debug && ninja -C build examples/tone-generator/tone-generator",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Build All (Debug)",
+            "type": "shell",
+            "command": "meson setup build --buildtype=debug && ninja -C build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Clean Build",
+            "type": "shell",
+            "command": "rm -rf build && meson setup build --buildtype=debug && ninja -C build",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": ["$gcc"]
+        }
+    ]
+}
